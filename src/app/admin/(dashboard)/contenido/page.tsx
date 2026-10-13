@@ -1,25 +1,14 @@
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { DeleteContentButton } from './DeleteContentButton';
 
 export const revalidate = 0; 
 
 export default async function AdminContenidoPage() {
-  const cookieStore = await cookies();
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() { return cookieStore.getAll(); },
-        setAll() {},
-      },
-    }
-  );
-
-  const { data: contents, error } = await supabase
+  // Consultar todos los contenidos con supabaseAdmin para evitar restricciones de RLS
+  const { data: contents, error } = await supabaseAdmin
     .from('content')
     .select('*')
     .order('created_at', { ascending: false });
@@ -28,9 +17,16 @@ export default async function AdminContenidoPage() {
     <div className="max-w-6xl mx-auto space-y-8 pb-10">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-outline-variant/30 pb-6">
         <div>
-          <h1 className="font-headline-md text-headline-md text-primary font-bold tracking-tight">Catálogo de Contenido</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="font-headline-md text-headline-md text-primary font-bold tracking-tight">Catálogo de Contenido</h1>
+            {contents && (
+              <span className="px-3 py-1 rounded-full bg-primary/10 text-primary font-label-xs font-bold">
+                {contents.length} {contents.length === 1 ? 'lección' : 'lecciones'}
+              </span>
+            )}
+          </div>
           <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
-            Gestiona todos los cursos, artículos y recursos de la plataforma.
+            Gestiona, edita o elimina todos los cursos, artículos, videos y recursos de la plataforma.
           </p>
         </div>
         <Link 
@@ -100,9 +96,27 @@ export default async function AdminContenidoPage() {
                       {format(new Date(item.created_at), 'dd MMM yyyy', { locale: es })}
                     </td>
                     <td className="p-4 text-right">
-                      <button className="p-2 text-on-surface-variant hover:text-primary transition-colors">
-                        <span className="material-symbols-outlined text-[20px]">edit</span>
-                      </button>
+                      <div className="inline-flex items-center gap-1">
+                        <Link 
+                          href={`/aula/contenido/${item.id}`}
+                          target="_blank"
+                          title="Previsualizar en el Aula"
+                          className="p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-lg transition-colors"
+                        >
+                          <span className="material-symbols-outlined text-[20px]">visibility</span>
+                        </Link>
+                        <Link 
+                          href={`/admin/contenido/editar/${item.id}`}
+                          title="Editar contenido"
+                          className="p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-lg transition-colors"
+                        >
+                          <span className="material-symbols-outlined text-[20px]">edit</span>
+                        </Link>
+                        <DeleteContentButton 
+                          contentId={item.id} 
+                          contentTitle={item.title} 
+                        />
+                      </div>
                     </td>
                   </tr>
                 ))}

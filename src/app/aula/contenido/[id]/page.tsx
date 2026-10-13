@@ -1,4 +1,5 @@
 import { createServerClient } from '@supabase/ssr';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
@@ -6,6 +7,17 @@ import remarkGfm from 'remark-gfm';
 import Link from 'next/link';
 
 export const revalidate = 0;
+
+function getEmbedUrl(url: string | null) {
+  if (!url) return null;
+  // YouTube
+  const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+  if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}`;
+  // Vimeo
+  const vimeoMatch = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+  if (vimeoMatch) return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
+  return null;
+}
 
 export default async function ContenidoPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
@@ -22,8 +34,8 @@ export default async function ContenidoPage({ params }: { params: Promise<{ id: 
     }
   );
 
-  // 1. Fetch content by ID
-  const { data: content, error } = await supabase
+  // 1. Fetch content by ID usando supabaseAdmin para asegurar lectura
+  const { data: content, error } = await supabaseAdmin
     .from('content')
     .select('*')
     .eq('id', resolvedParams.id)
@@ -44,16 +56,35 @@ export default async function ContenidoPage({ params }: { params: Promise<{ id: 
       requireLogin = true;
     } else {
       // Verificar si es admin (tiene acceso a todo)
-      const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+      const { data: profile } = await supabaseAdmin
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
       if (profile?.role === 'admin') {
         hasAccess = true;
       } else {
-        // En el futuro: Verificar tabla de suscripciones (ej: ePayco subscriptions)
-        // Por ahora lo simulamos bloqueado para clientes normales si es premium
-        hasAccess = false; 
+        // Verificar si tiene membresía activa en la tabla memberships
+        const { data: membership } = await supabaseAdmin
+          .from('memberships')
+          .select('status, current_period_end')
+          .eq('user_id', user.id)
+          .single();
+
+        if (membership && membership.status === 'active') {
+          const isExpired = membership.current_period_end 
+            ? new Date(membership.current_period_end) < new Date() 
+            : false;
+          if (!isExpired) {
+            hasAccess = true;
+          }
+        }
       }
     }
   }
+
+  const embedUrl = getEmbedUrl(content.url);
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-10">
@@ -69,8 +100,18 @@ export default async function ContenidoPage({ params }: { params: Promise<{ id: 
         </div>
       </div>
 
-      {/* Hero Image */}
-      {content.thumbnail_url && (
+      {/* Hero Media: Video player or Hero Image */}
+      {hasAccess && embedUrl ? (
+        <div className="w-full aspect-video rounded-3xl overflow-hidden shadow-lg border border-outline-variant/30 relative bg-black">
+          <iframe 
+            src={embedUrl} 
+            className="w-full h-full border-0" 
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+            allowFullScreen
+            title={content.title}
+          />
+        </div>
+      ) : content.thumbnail_url ? (
         <div className="w-full aspect-video rounded-3xl overflow-hidden shadow-lg border border-outline-variant/30 relative bg-surface-container-high">
            <img 
             src={content.thumbnail_url} 
@@ -78,7 +119,7 @@ export default async function ContenidoPage({ params }: { params: Promise<{ id: 
             className="w-full h-full object-cover" 
           />
         </div>
-      )}
+      ) : null}
 
       {/* Header Info */}
       <div className="space-y-4">
@@ -97,6 +138,21 @@ export default async function ContenidoPage({ params }: { params: Promise<{ id: 
            <p className="font-body-lg text-on-surface-variant italic border-l-4 border-secondary pl-4 py-1">
              {content.description}
            </p>
+        )}
+
+        {/* External resource link if not video embed */}
+        {hasAccess && content.url && !embedUrl && (
+          <div className="pt-2">
+            <a 
+              href={content.url} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-secondary text-on-secondary font-label-sm font-bold hover:bg-secondary/90 transition-colors shadow-sm"
+            >
+              <span className="material-symbols-outlined text-[18px]">open_in_new</span>
+              <span>Abrir recurso / enlace externo</span>
+            </a>
+          </div>
         )}
       </div>
 
@@ -117,7 +173,7 @@ export default async function ContenidoPage({ params }: { params: Promise<{ id: 
               </article>
             ) : (
               <div className="text-center text-on-surface-variant py-10">
-                <p>Este contenido no tiene cuerpo de texto asociado.</p>
+                <p>Este contenido no tiene cuerpo de texto adicional.</p>
               </div>
             )}
           </div>

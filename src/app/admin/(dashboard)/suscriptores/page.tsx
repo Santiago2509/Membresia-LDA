@@ -143,11 +143,7 @@ export default async function AdminSuscriptoresPage() {
 
                       {/* Acción */}
                       <td className="p-4">
-                        {sub.status === 'active' && !isExpired ? (
-                          <SuspendButton membershipId={sub.id} />
-                        ) : sub.status === 'canceled' ? (
-                          <span className="font-label-xs text-on-surface-variant">—</span>
-                        ) : null}
+                        <SuspendButton membershipId={sub.id} currentStatus={sub.status} />
                       </td>
                     </tr>
                   );
