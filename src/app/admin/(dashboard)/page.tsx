@@ -63,6 +63,7 @@ export default async function AdminDashboard() {
          <div className="flex items-center gap-4 w-full sm:w-auto">
             <Link 
               href="/admin/contenido/nuevo"
+              prefetch={false}
               className="px-4 py-2 bg-primary text-on-primary rounded-full font-label-sm font-bold flex items-center gap-1.5 shadow-sm hover:bg-primary/90 transition-colors"
             >
               <span className="material-symbols-outlined text-[18px]">add</span>
@@ -84,7 +85,7 @@ export default async function AdminDashboard() {
              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
                 <span className="material-symbols-outlined text-[20px]">groups</span>
              </div>
-             <Link href="/admin/suscriptores" className="text-label-xs font-bold text-secondary hover:underline">
+             <Link href="/admin/suscriptores" prefetch={false} className="text-label-xs font-bold text-secondary hover:underline">
                Ver todos
              </Link>
           </div>
@@ -118,7 +119,7 @@ export default async function AdminDashboard() {
              <div className="w-10 h-10 rounded-xl bg-surface-container-highest flex items-center justify-center text-on-surface">
                 <span className="material-symbols-outlined text-[20px]">school</span>
              </div>
-             <Link href="/admin/contenido" className="text-label-xs font-bold text-secondary hover:underline">
+             <Link href="/admin/contenido" prefetch={false} className="text-label-xs font-bold text-secondary hover:underline">
                Gestionar
              </Link>
           </div>
@@ -153,6 +154,7 @@ export default async function AdminDashboard() {
            {recientes.length > 0 && (
              <Link 
                href="/admin/suscriptores"
+               prefetch={false}
                className="text-secondary font-label-sm font-bold hover:underline flex items-center gap-1"
              >
                Ver todos ({suscriptoresTotales})
@@ -214,6 +216,7 @@ export default async function AdminDashboard() {
                       <td className="p-4 text-right">
                         <Link 
                           href="/admin/suscriptores"
+                          prefetch={false}
                           className="font-label-xs text-secondary font-bold hover:underline"
                         >
                           Administrar

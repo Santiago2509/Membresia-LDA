@@ -26,36 +26,32 @@ export async function proxy(request: NextRequest) {
     }
   );
 
-  // Refrescar sesión
+  // Refrescar sesión para que las cookies viajen siempre actualizadas a los Server Components
   const { data: { user } } = await supabase.auth.getUser();
 
   const url = request.nextUrl.clone();
   const isAdminLoginRoute = url.pathname === '/admin/login';
-  const isAdminRoute = url.pathname.startsWith('/admin') && !isAdminLoginRoute;
-  const isAulaRoute = url.pathname.startsWith('/aula');
 
-  // Sin sesión → redirigir al login
-  if (!user) {
-    if (isAdminRoute) {
-      url.pathname = '/admin/login';
-      return NextResponse.redirect(url);
-    }
-    if (isAulaRoute) {
-      url.pathname = '/login';
-      return NextResponse.redirect(url);
-    }
-  }
-
-  // Ya autenticado intentando ir al login de admin → redirigir al panel
+  // Si ya tiene sesión activa de admin y entra a /admin/login, enviarlo al dashboard
   if (user && isAdminLoginRoute) {
     url.pathname = '/admin';
-    return NextResponse.redirect(url);
+    const redirectResponse = NextResponse.redirect(url);
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+      redirectResponse.cookies.set(cookie.name, cookie.value);
+    });
+    return redirectResponse;
   }
 
-  // El chequeo de rol admin se hace en la página del servidor, no aquí
+  // La protección de rutas y permisos de admin la gestiona de forma segura y autoritativa
+  // el AdminLayout en el servidor, evitando rebotes en navegaciones cliente (RSC)
   return supabaseResponse;
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/aula/:path*'],
+  matcher: [
+    /*
+     * Excluir archivos estáticos, imágenes y favicons para evitar ejecuciones innecesarias
+     */
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
 };

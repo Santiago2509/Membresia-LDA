@@ -108,6 +108,7 @@ export function AdminNav({ adminEmail }: { adminEmail: string }) {
                           <Link
                             key={item.href}
                             href={item.href}
+                            prefetch={false}
                             onClick={() => setMobileOpen(false)}
                             className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-label-md text-label-md transition-all ${
                               active
@@ -167,6 +168,7 @@ export function AdminNav({ adminEmail }: { adminEmail: string }) {
                     <Link
                       key={item.href}
                       href={item.href}
+                      prefetch={false}
                       className={`flex items-center gap-3 px-4 py-2.5 rounded-xl font-label-md text-label-md transition-all ${
                         active
                           ? 'bg-primary-container text-on-primary-container font-bold shadow-sm'
