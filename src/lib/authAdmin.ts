@@ -12,6 +12,18 @@ export async function verifyAdmin() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
 
+  // 1. Verificar en la tabla dedicada de administradores
+  const { data: adminRecord } = await supabaseAdmin
+    .from('admins')
+    .select('id, email, full_name')
+    .eq('id', user.id)
+    .single();
+
+  if (adminRecord) {
+    return { user, profile: { ...adminRecord, role: 'admin' } };
+  }
+
+  // 2. Respaldo: verificar en profiles con role = 'admin'
   const { data: profile } = await supabaseAdmin
     .from('profiles')
     .select('id, role, email')

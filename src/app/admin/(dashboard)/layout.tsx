@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { AdminNav } from './AdminNav';
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -24,21 +25,32 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     redirect('/admin/login');
   }
 
-  // 2. Verificar rol usando el cliente SSR
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role, email')
+  // 2. Verificar rol en la tabla dedicada 'admins' o en 'profiles'
+  const { data: adminRecord } = await supabaseAdmin
+    .from('admins')
+    .select('email, full_name')
     .eq('id', user.id)
     .single();
 
-  if (!profile || profile.role !== 'admin') {
-    redirect('/aula');
+  let adminEmail = adminRecord?.email;
+
+  if (!adminRecord) {
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('role, email')
+      .eq('id', user.id)
+      .single();
+
+    if (!profile || profile.role !== 'admin') {
+      redirect('/aula');
+    }
+    adminEmail = profile.email;
   }
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-surface-container-low font-body-md text-on-surface">
       {/* Navigation (Sidebar en desktop + Topbar en mobile) */}
-      <AdminNav adminEmail={profile.email || ''} />
+      <AdminNav adminEmail={adminEmail || ''} />
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 relative">
