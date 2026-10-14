@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { createSupabaseBrowserClient } from '@/lib/supabase';
+import { getEmbedUrl, getVideoThumbnail } from '@/lib/videoUtils';
 
 export default function NuevoContenidoPage() {
   const router = useRouter();
@@ -13,13 +13,26 @@ export default function NuevoContenidoPage() {
   // Form State
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [type, setType] = useState('article');
+  const [type, setType] = useState('video');
   const [category, setCategory] = useState('');
-  const [url, setUrl] = useState('');
   const [isPremium, setIsPremium] = useState(true);
-  const [body, setBody] = useState('');
+
+  // Estructura de la lección
+  const [body, setBody] = useState(''); // Texto 1: Antes del video
+  const [url, setUrl] = useState(''); // Video intermedio
+  const [bodyAfter, setBodyAfter] = useState(''); // Texto 2: Después del video
+  const [resourceUrl, setResourceUrl] = useState(''); // Enlace final
+  const [resourceTitle, setResourceTitle] = useState(''); // Título del enlace final
+
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [thumbnailUrlInput, setThumbnailUrlInput] = useState('');
+
+  // Video embed preview
+  const embedPreviewUrl = getEmbedUrl(url);
+  const autoDetectedThumbnail = getVideoThumbnail(url);
+
+  // Effective preview thumbnail
+  const effectiveThumbnail = thumbnailUrlInput.trim() || autoDetectedThumbnail;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,41 +40,43 @@ export default function NuevoContenidoPage() {
     setError(null);
 
     try {
-      let finalThumbnailUrl = thumbnailUrlInput.trim() || null;
+      let finalThumbnailUrl = thumbnailUrlInput.trim() || autoDetectedThumbnail || null;
 
-      // 1. Upload thumbnail if file provided
+      // 1. Subir miniatura a través de endpoint seguro del servidor si hay archivo local
       if (thumbnailFile) {
-        const supabaseClient = createSupabaseBrowserClient();
-        const fileExt = thumbnailFile.name.split('.').pop();
-        const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
-        const filePath = `${fileName}`;
+        const formData = new FormData();
+        formData.append('file', thumbnailFile);
 
-        const { error: uploadError } = await supabaseClient.storage
-          .from('thumbnails')
-          .upload(filePath, thumbnailFile);
+        const uploadRes = await fetch('/api/admin/upload', {
+          method: 'POST',
+          body: formData,
+        });
 
-        if (uploadError) throw uploadError;
+        if (!uploadRes.ok) {
+          const errData = await uploadRes.json().catch(() => ({}));
+          throw new Error(errData.error || 'Error al subir la imagen de miniatura.');
+        }
 
-        const { data: publicUrlData } = supabaseClient.storage
-          .from('thumbnails')
-          .getPublicUrl(filePath);
-
-        finalThumbnailUrl = publicUrlData.publicUrl;
+        const uploadData = await uploadRes.json();
+        finalThumbnailUrl = uploadData.publicUrl;
       }
 
-      // 2. Insert into content via secure admin API
+      // 2. Insertar contenido estructurado
       const res = await fetch('/api/admin/content', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title,
-          description,
+          title: title.trim(),
+          description: description.trim() || null,
           type,
-          category,
+          category: category.trim(),
           is_premium: isPremium,
           url: url.trim() || null,
           thumbnail_url: finalThumbnailUrl,
-          body,
+          body: body.trim() || null,
+          body_after: bodyAfter.trim() || null,
+          resource_url: resourceUrl.trim() || null,
+          resource_title: resourceTitle.trim() || null,
         }),
       });
 
@@ -70,7 +85,7 @@ export default function NuevoContenidoPage() {
         throw new Error(errorData.error || 'Error al guardar el contenido.');
       }
 
-      // 3. Redirect back to list
+      // 3. Redirigir al catálogo de administración
       router.push('/admin/contenido');
       router.refresh();
       
@@ -83,198 +98,312 @@ export default function NuevoContenidoPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 pb-10">
-      <div className="flex items-center gap-4 border-b border-outline-variant/30 pb-6">
-        <Link href="/admin/contenido" className="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors">
+    <div className="max-w-4xl mx-auto space-y-8 pb-16">
+      
+      {/* Header */}
+      <div className="flex items-center gap-4 border-b border-black/10 pb-6">
+        <Link 
+          href="/admin/contenido" 
+          className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-neutral-600 hover:text-neutral-900 border border-black/10 transition-colors shadow-sm"
+          aria-label="Volver"
+        >
           <span className="material-symbols-outlined text-[20px]">arrow_back</span>
         </Link>
         <div>
-          <h1 className="font-headline-md text-headline-md text-primary font-bold tracking-tight">Crear Nuevo Contenido</h1>
-          <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">Sube un nuevo curso, artículo, video o recurso a la plataforma.</p>
+          <h1 className="font-headline-md text-2xl font-bold text-neutral-900 tracking-tight">Publicar Nuevo Contenido</h1>
+          <p className="font-body-sm text-sm text-neutral-600 mt-0.5">
+            Crea una lección estructurada con texto inicial, video central y reflexiones posteriores.
+          </p>
         </div>
       </div>
 
       {error && (
-        <div className="p-4 bg-error-container text-on-error-container rounded-xl text-sm font-medium flex items-center gap-2">
-          <span className="material-symbols-outlined text-[20px]">error</span>
+        <div className="p-4 bg-red-50 text-red-700 rounded-xl text-sm font-medium flex items-center gap-2 border border-red-200">
+          <span className="material-symbols-outlined text-[20px] text-red-500">error</span>
           <span>{error}</span>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="bg-surface-container-lowest/90 backdrop-blur-xl rounded-3xl shadow-sm border border-outline-variant/30 p-6 md:p-8 space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-8">
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <label className="font-label-sm font-bold text-on-surface">Título del contenido *</label>
-            <input 
-              type="text" 
-              required
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Ej: Gestionando la Ansiedad Paso a Paso"
-              className="w-full px-4 py-3 bg-surface-container rounded-xl border border-outline-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/50 text-body-sm transition-all"
-            />
+        {/* =========================================================
+            BLOQUE 1: DATOS BÁSICOS DE LA LECCIÓN
+            ========================================================= */}
+        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-black/10 shadow-sm space-y-6">
+          <div className="border-b border-black/5 pb-3">
+            <h2 className="text-base font-bold text-neutral-900 flex items-center gap-2">
+              <span className="material-symbols-outlined text-[#133a73] text-[20px]">info</span>
+              <span>1. Información General</span>
+            </h2>
           </div>
 
-          <div className="space-y-2">
-            <label className="font-label-sm font-bold text-on-surface">Categoría *</label>
-            <input 
-              type="text" 
-              required
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              placeholder="Ej: Bienestar Emocional, Respiración, Sueño..."
-              className="w-full px-4 py-3 bg-surface-container rounded-xl border border-outline-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/50 text-body-sm transition-all"
-            />
-          </div>
-        </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-1.5 md:col-span-2">
+              <label className="text-xs font-bold text-neutral-800 uppercase tracking-wider">Título de la Lección *</label>
+              <input 
+                type="text" 
+                required
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Ej: Tu cerebro escucha lo que te dices"
+                className="w-full px-4 py-3 bg-neutral-50 rounded-xl border border-black/10 focus:outline-none focus:ring-2 focus:ring-[#133a73]/40 text-sm transition-all"
+              />
+            </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <label className="font-label-sm font-bold text-on-surface">Tipo de Contenido *</label>
-            <div className="relative">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-neutral-800 uppercase tracking-wider">Categoría *</label>
+              <input 
+                type="text" 
+                required
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                placeholder="Ej: Reestructuración Cognitiva, Respiración, Pánico..."
+                className="w-full px-4 py-3 bg-neutral-50 rounded-xl border border-black/10 focus:outline-none focus:ring-2 focus:ring-[#133a73]/40 text-sm transition-all"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-neutral-800 uppercase tracking-wider">Tipo de Contenido *</label>
               <select 
                 value={type}
                 onChange={(e) => setType(e.target.value)}
-                className="w-full px-4 py-3 bg-surface-container rounded-xl border border-outline-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/50 text-body-sm transition-all appearance-none"
+                className="w-full px-4 py-3 bg-neutral-50 rounded-xl border border-black/10 focus:outline-none focus:ring-2 focus:ring-[#133a73]/40 text-sm transition-all"
               >
-                <option value="video">Video (YouTube, Vimeo, etc.)</option>
+                <option value="video">Video (YouTube / Vimeo)</option>
                 <option value="article">Artículo / Lección de Lectura</option>
                 <option value="audio">Audio / Meditación</option>
-                <option value="pdf">Documento PDF / Guía</option>
-                <option value="tool">Herramienta / Ejercicio</option>
+                <option value="pdf">Documento PDF / Guía Clínica</option>
+                <option value="tool">Herramienta / Ejercicio Práctico</option>
               </select>
-              <span className="material-symbols-outlined absolute right-4 top-3 text-on-surface-variant pointer-events-none">expand_more</span>
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <label className="font-label-sm font-bold text-on-surface">Acceso</label>
-            <div className="flex items-center gap-4 h-[48px]">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input 
-                  type="radio" 
-                  name="access"
-                  checked={isPremium} 
-                  onChange={() => setIsPremium(true)}
-                  className="w-4 h-4 text-primary bg-surface-container border-outline-variant focus:ring-primary"
-                />
-                <span className="font-label-sm font-bold text-primary flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[16px]">lock</span>
-                  Premium (Solo suscriptores)
-                </span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input 
-                  type="radio" 
-                  name="access"
-                  checked={!isPremium} 
-                  onChange={() => setIsPremium(false)}
-                  className="w-4 h-4 text-primary bg-surface-container border-outline-variant focus:ring-primary"
-                />
-                <span className="font-label-sm font-medium text-on-surface-variant flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[16px]">public</span>
-                  Gratis (Público)
-                </span>
-              </label>
+            <div className="space-y-1.5 md:col-span-2">
+              <label className="text-xs font-bold text-neutral-800 uppercase tracking-wider">Acceso a este Contenido</label>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 p-4 bg-neutral-50 rounded-xl border border-black/10">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input 
+                    type="radio" 
+                    name="access"
+                    checked={isPremium} 
+                    onChange={() => setIsPremium(true)}
+                    className="w-4 h-4 text-[#133a73]"
+                  />
+                  <span className="text-xs font-bold text-neutral-900 flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[16px] text-[#133a73]">lock</span>
+                    <span>Premium (Solo miembros con membresía activa)</span>
+                  </span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input 
+                    type="radio" 
+                    name="access"
+                    checked={!isPremium} 
+                    onChange={() => setIsPremium(false)}
+                    className="w-4 h-4 text-[#133a73]"
+                  />
+                  <span className="text-xs font-medium text-neutral-700 flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[16px] text-green-600">public</span>
+                    <span>Público / Gratis (Abierto para todos)</span>
+                  </span>
+                </label>
+              </div>
             </div>
-          </div>
-        </div>
 
-        {/* Video / Resource URL */}
-        <div className="space-y-2">
-          <label className="font-label-sm font-bold text-on-surface">
-            URL del Video o Recurso Externo {type === 'video' ? '(Recomendado para Videos)' : '(Opcional)'}
-          </label>
-          <input 
-            type="url" 
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            placeholder="https://www.youtube.com/watch?v=... o https://vimeo.com/... o enlace de archivo"
-            className="w-full px-4 py-3 bg-surface-container rounded-xl border border-outline-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/50 text-body-sm transition-all"
-          />
-          <p className="text-xs text-on-surface-variant">
-            Pega el enlace de YouTube o Vimeo para incrustar el reproductor directamente en el aula del paciente.
-          </p>
-        </div>
+            <div className="space-y-1.5 md:col-span-2">
+              <label className="text-xs font-bold text-neutral-800 uppercase tracking-wider">Descripción Corta (Para tarjetas del catálogo)</label>
+              <textarea 
+                rows={2}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Resumen breve de 1 o 2 líneas que aparecerá en el catálogo..."
+                className="w-full px-4 py-3 bg-neutral-50 rounded-xl border border-black/10 focus:outline-none focus:ring-2 focus:ring-[#133a73]/40 text-sm transition-all resize-none"
+              />
+            </div>
 
-        <div className="space-y-2">
-          <label className="font-label-sm font-bold text-on-surface">Descripción Corta (Para las tarjetas)</label>
-          <textarea 
-            rows={2}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Un resumen de 2 líneas para mostrar en el catálogo..."
-            className="w-full px-4 py-3 bg-surface-container rounded-xl border border-outline-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/50 text-body-sm transition-all resize-none"
-          />
-        </div>
-
-        {/* Thumbnail: File upload OR URL */}
-        <div className="space-y-3">
-          <label className="font-label-sm font-bold text-on-surface">Imagen de Miniatura</label>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <label className="flex flex-col items-center justify-center h-32 border-2 border-outline-variant/50 border-dashed rounded-xl cursor-pointer bg-surface-container hover:bg-surface-container-high transition-colors">
-              <span className="material-symbols-outlined text-[32px] text-on-surface-variant mb-1">cloud_upload</span>
-              <p className="text-sm text-on-surface-variant text-center px-2">
-                {thumbnailFile ? (
-                  <span className="font-bold text-primary">{thumbnailFile.name}</span>
-                ) : (
-                  <>Subir archivo de imagen</>
+            <div className="space-y-2 md:col-span-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-neutral-800 uppercase tracking-wider">Imagen de Miniatura</label>
+                {autoDetectedThumbnail && !thumbnailFile && !thumbnailUrlInput && (
+                  <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[14px]">auto_awesome</span>
+                    <span>Detectada automáticamente del video</span>
+                  </span>
                 )}
-              </p>
-              <span className="text-[11px] text-on-surface-variant/70">JPG, PNG o WEBP</span>
-              <input type="file" className="hidden" accept="image/*" onChange={(e) => setThumbnailFile(e.target.files?.[0] || null)} />
-            </label>
+              </div>
 
-            <div className="flex flex-col justify-center space-y-2">
-              <span className="text-xs text-on-surface-variant font-medium">O ingresa un enlace directo a la imagen:</span>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <label className="flex flex-col items-center justify-center h-28 border-2 border-black/15 border-dashed rounded-xl cursor-pointer bg-neutral-50 hover:bg-neutral-100 transition-colors p-3">
+                  <span className="material-symbols-outlined text-[28px] text-neutral-500 mb-1">cloud_upload</span>
+                  <p className="text-xs text-neutral-600 text-center truncate max-w-full">
+                    {thumbnailFile ? (
+                      <strong className="text-[#133a73]">{thumbnailFile.name}</strong>
+                    ) : (
+                      <span>Seleccionar archivo local (JPG, PNG, WEBP)</span>
+                    )}
+                  </p>
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    className="hidden" 
+                    onChange={(e) => {
+                      if (e.target.files?.[0]) setThumbnailFile(e.target.files[0]);
+                    }}
+                  />
+                </label>
+
+                <div className="flex flex-col justify-center gap-2">
+                  <input 
+                    type="url" 
+                    value={thumbnailUrlInput}
+                    onChange={(e) => setThumbnailUrlInput(e.target.value)}
+                    placeholder="O pega aquí un enlace directo a la imagen..."
+                    className="w-full px-4 py-3 bg-neutral-50 rounded-xl border border-black/10 focus:outline-none focus:ring-2 focus:ring-[#133a73]/40 text-xs transition-all"
+                  />
+                  {effectiveThumbnail && (
+                    <div className="flex items-center gap-2 text-xs text-neutral-500">
+                      <span className="material-symbols-outlined text-[16px] text-green-600">check_circle</span>
+                      <span>Miniatura lista</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* =========================================================
+            BLOQUE 2: ESTRUCTURA DE LA LECCIÓN (TEXTO -> VIDEO -> TEXTO)
+            ========================================================= */}
+        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-black/10 shadow-sm space-y-6">
+          <div className="border-b border-black/5 pb-3">
+            <h2 className="text-base font-bold text-neutral-900 flex items-center gap-2">
+              <span className="material-symbols-outlined text-[#12a04a] text-[20px]">view_stream</span>
+              <span>2. Cuerpo de la Lección (Estructura Editorial)</span>
+            </h2>
+            <p className="text-xs text-neutral-500 mt-1">
+              Todos los campos son modulares y opcionales. Puedes redactar texto al inicio, incrustar un video intermedio y añadir reflexiones después.
+            </p>
+          </div>
+
+          {/* PARTE A: TEXTO AL INICIO */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-neutral-800 uppercase tracking-wider flex items-center gap-1.5">
+                <span className="w-5 h-5 rounded-full bg-blue-100 text-[#133a73] flex items-center justify-center text-[10px] font-bold">A</span>
+                <span>Texto al Inicio (Antes del video - Opcional)</span>
+              </label>
+              <span className="text-[11px] text-neutral-400 font-medium">Soporta Markdown y saltos de línea</span>
+            </div>
+            <textarea 
+              rows={6}
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              placeholder="Escribe la bienvenida, reflexión inicial o introducción antes del video..."
+              className="w-full p-4 bg-neutral-50 rounded-2xl border border-black/10 focus:outline-none focus:ring-2 focus:ring-[#133a73]/40 font-mono text-xs sm:text-sm transition-all"
+            />
+          </div>
+
+          {/* PARTE B: VIDEO INTERMEDIO */}
+          <div className="space-y-2 p-4 sm:p-5 bg-neutral-50 rounded-2xl border border-black/10">
+            <label className="text-xs font-bold text-neutral-800 uppercase tracking-wider flex items-center gap-1.5">
+              <span className="w-5 h-5 rounded-full bg-green-100 text-[#12a04a] flex items-center justify-center text-[10px] font-bold">B</span>
+              <span>Video Intermedio (Enlace de YouTube o Vimeo - Opcional)</span>
+            </label>
+            <input 
+              type="text" 
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="Pega enlace de YouTube (ej. https://www.youtube.com/watch?v=... o https://youtu.be/...)"
+              className="w-full px-4 py-3 bg-white rounded-xl border border-black/10 focus:outline-none focus:ring-2 focus:ring-[#133a73]/40 text-sm transition-all"
+            />
+
+            {/* Vista previa en vivo del video si se pega un enlace */}
+            {embedPreviewUrl && (
+              <div className="mt-4 pt-4 border-t border-black/5">
+                <p className="text-xs font-bold text-neutral-700 mb-2.5 flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[18px] text-green-600">visibility</span>
+                  <span>Vista Previa del Reproductor de Video:</span>
+                </p>
+                <div className="w-full aspect-video max-w-2xl mx-auto rounded-2xl overflow-hidden shadow-xl border border-black/10 bg-black">
+                  <iframe 
+                    src={embedPreviewUrl} 
+                    className="w-full h-full border-0" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    title="Vista previa del video"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* PARTE C: TEXTO DESPUÉS DEL VIDEO */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-neutral-800 uppercase tracking-wider flex items-center gap-1.5">
+                <span className="w-5 h-5 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center text-[10px] font-bold">C</span>
+                <span>Texto Después del Video (Explicación / Ejercicios - Opcional)</span>
+              </label>
+              <span className="text-[11px] text-neutral-400 font-medium">Soporta Markdown y saltos de línea</span>
+            </div>
+            <textarea 
+              rows={6}
+              value={bodyAfter}
+              onChange={(e) => setBodyAfter(e.target.value)}
+              placeholder="Desarrollo del tema, ejercicios prácticos, pasos a seguir o reflexiones finales después del video..."
+              className="w-full p-4 bg-neutral-50 rounded-2xl border border-black/10 focus:outline-none focus:ring-2 focus:ring-[#133a73]/40 font-mono text-xs sm:text-sm transition-all"
+            />
+          </div>
+
+          {/* PARTE D: ENLACE / BOTÓN FINAL OPCIONAL */}
+          <div className="space-y-3 p-4 sm:p-5 bg-neutral-50 rounded-2xl border border-black/10">
+            <label className="text-xs font-bold text-neutral-800 uppercase tracking-wider flex items-center gap-1.5">
+              <span className="w-5 h-5 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-[10px] font-bold">D</span>
+              <span>Enlace / Botón Final de la Lección (Opcional)</span>
+            </label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <input 
+                type="text" 
+                value={resourceTitle}
+                onChange={(e) => setResourceTitle(e.target.value)}
+                placeholder="Texto del botón (ej: Descargar Guía en PDF)"
+                className="w-full px-4 py-2.5 bg-white rounded-xl border border-black/10 focus:outline-none focus:ring-2 focus:ring-[#133a73]/40 text-xs sm:text-sm"
+              />
               <input 
                 type="url" 
-                value={thumbnailUrlInput}
-                onChange={(e) => setThumbnailUrlInput(e.target.value)}
-                placeholder="https://images.unsplash.com/photo-..."
-                className="w-full px-4 py-2.5 bg-surface-container rounded-xl border border-outline-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/50 text-body-sm transition-all"
+                value={resourceUrl}
+                onChange={(e) => setResourceUrl(e.target.value)}
+                placeholder="URL del recurso (ej: https://...)"
+                className="w-full px-4 py-2.5 bg-white rounded-xl border border-black/10 focus:outline-none focus:ring-2 focus:ring-[#133a73]/40 text-xs sm:text-sm"
               />
             </div>
           </div>
+
         </div>
 
-        {/* Markdown Body */}
-        <div className="space-y-2 pt-4 border-t border-outline-variant/30">
-          <div className="flex justify-between items-center mb-2">
-            <label className="font-label-sm font-bold text-on-surface">Contenido Completo (Markdown)</label>
-            <span className="text-xs text-on-surface-variant font-medium bg-surface-container px-2 py-1 rounded">Soporta Markdown (títulos, negritas, listas, enlaces)</span>
-          </div>
-          <textarea 
-            rows={12}
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            placeholder={`# Título del módulo\n\nBienvenido a este módulo. En esta lección aprenderemos a...\n\n### Puntos clave:\n- Respiración consciente\n- Reconocimiento de pensamientos\n\n[Enlace a recursos adicionales](https://...)`}
-            className="w-full px-4 py-4 bg-surface-container rounded-xl border border-outline-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/50 text-body-sm transition-all font-mono text-sm resize-y"
-          />
-        </div>
-
-        <div className="pt-6 flex justify-end gap-4 border-t border-outline-variant/30">
+        {/* Botones de Envío */}
+        <div className="flex items-center justify-end gap-4 pt-4">
           <Link 
             href="/admin/contenido"
-            className="px-6 py-3 rounded-full font-label-md font-bold text-on-surface-variant hover:bg-surface-container transition-colors"
+            className="px-6 py-3 rounded-full text-neutral-600 hover:text-neutral-900 font-semibold text-sm transition-colors"
           >
             Cancelar
           </Link>
+
           <button 
-            type="submit"
+            type="submit" 
             disabled={isSubmitting}
-            className="px-8 py-3 rounded-full bg-primary text-on-primary font-label-md font-bold hover:bg-primary/90 transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2"
+            className="flex items-center gap-2 px-8 py-3.5 bg-[#133a73] text-white rounded-full font-bold text-sm shadow-md hover:bg-[#001531] transition-all duration-200 hover:-translate-y-0.5 disabled:opacity-50 cursor-pointer"
           >
             {isSubmitting ? (
               <>
-                <span className="material-symbols-outlined animate-spin text-[20px]">progress_activity</span>
-                Guardando...
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                <span>Guardando...</span>
               </>
             ) : (
               <>
-                <span className="material-symbols-outlined text-[20px]">check</span>
-                Guardar y Publicar
+                <span>Publicar Lección</span>
+                <span className="material-symbols-outlined text-[18px]">publish</span>
               </>
             )}
           </button>

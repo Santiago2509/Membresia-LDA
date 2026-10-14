@@ -1,70 +1,144 @@
 import Link from 'next/link';
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
-export default function AulaLayout({ children }: { children: React.ReactNode }) {
+export default async function AulaLayout({ children }: { children: React.ReactNode }) {
+  const cookieStore = await cookies();
+  
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() { return cookieStore.getAll(); },
+        setAll() {},
+      },
+    }
+  );
+
+  const { data: { user } } = await supabase.auth.getUser();
+
+  let displayName = 'Miembro';
+  let emailDisplay = '';
+  let initials = 'MB';
+  let isSubscriber = false;
+
+  if (user) {
+    emailDisplay = user.email || '';
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('full_name, role')
+      .eq('id', user.id)
+      .single();
+
+    if (profile?.full_name) {
+      displayName = profile.full_name;
+      const parts = profile.full_name.trim().split(' ');
+      initials = parts.length > 1 ? `${parts[0][0]}${parts[1][0]}`.toUpperCase() : parts[0].slice(0, 2).toUpperCase();
+    } else if (user.email) {
+      displayName = user.email.split('@')[0];
+      initials = displayName.slice(0, 2).toUpperCase();
+    }
+
+    if (profile?.role === 'admin') {
+      isSubscriber = true;
+    } else {
+      const { data: membership } = await supabaseAdmin
+        .from('memberships')
+        .select('status')
+        .eq('user_id', user.id)
+        .single();
+      isSubscriber = membership?.status === 'active';
+    }
+  }
+
   return (
-    <div className="flex flex-col md:flex-row min-h-screen bg-surface-container-low font-body-md text-on-surface">
+    <div className="flex flex-col md:flex-row min-h-screen bg-[#e6e6e6] font-body-md text-on-surface pt-20">
       
-      {/* Sidebar - Premium Glass */}
-      <aside className="w-full md:w-72 bg-surface-container-lowest/80 backdrop-blur-xl border-r border-outline-variant/30 flex flex-col justify-between hidden md:flex shrink-0 pt-8 pb-4 h-screen sticky top-0 shadow-[4px_0_24px_rgba(19,42,74,0.02)]">
+      {/* Sidebar - Navegación Limpia y Sin Enlaces Rotos */}
+      <aside className="w-full md:w-72 bg-white/80 backdrop-blur-xl border-r border-black/8 flex flex-col justify-between hidden md:flex shrink-0 pt-6 pb-6 h-[calc(100vh-5rem)] sticky top-20 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
         
-        <div className="px-6 pb-8">
-           <Link href="/" className="inline-flex items-center gap-space-sm group">
-             <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
-                <span className="material-symbols-outlined text-on-secondary text-[18px]">self_improvement</span>
-             </div>
-             <span className="font-headline-sm text-title-md text-primary tracking-tight font-bold">
-              Libre de Ansiedad
-             </span>
+        <div className="flex-1 px-4 space-y-2 overflow-y-auto">
+          <div className="px-3 pb-3 mb-2 border-b border-black/5">
+            <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">
+              Navegación del Aula
+            </span>
+          </div>
+
+          <Link 
+            href="/aula" 
+            className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-[#001531] text-white font-label-md text-xs font-bold transition-all shadow-sm"
+          >
+            <span className="material-symbols-outlined text-[20px]">space_dashboard</span>
+            <span>Mi Aula Virtual</span>
+          </Link>
+
+          <Link 
+            href="/catalogo" 
+            className="flex items-center gap-3 px-4 py-3 rounded-2xl text-neutral-700 hover:bg-neutral-100 font-label-md text-xs font-bold transition-all"
+          >
+            <span className="material-symbols-outlined text-[20px] text-[#133a73]">local_library</span>
+            <span>Catálogo Completo</span>
+          </Link>
+
+          <Link 
+            href="/contacto" 
+            className="flex items-center gap-3 px-4 py-3 rounded-2xl text-neutral-700 hover:bg-neutral-100 font-label-md text-xs font-bold transition-all"
+          >
+            <span className="material-symbols-outlined text-[20px] text-[#12a04a]">support_agent</span>
+            <span>Soporte & Contacto</span>
+          </Link>
+
+          <Link 
+            href="/" 
+            className="flex items-center gap-3 px-4 py-3 rounded-2xl text-neutral-700 hover:bg-neutral-100 font-label-md text-xs font-bold transition-all"
+          >
+            <span className="material-symbols-outlined text-[20px] text-neutral-500">home</span>
+            <span>Volver a la Portada</span>
           </Link>
         </div>
         
-        <div className="flex-1 px-4 space-y-2 overflow-y-auto">
-            <Link href="/aula" className="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary-container text-on-primary font-label-md text-label-md font-semibold transition-all shadow-sm">
-              <span className="material-symbols-outlined text-[20px]">dashboard</span>
-              <span>Mi Espacio</span>
-            </Link>
-            <Link href="/aula/cursos" className="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-label-md text-label-md transition-all">
-              <span className="material-symbols-outlined text-[20px]">school</span>
-              <span>Mis Cursos</span>
-            </Link>
-            <Link href="/aula/biblioteca" className="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-label-md text-label-md transition-all">
-              <span className="material-symbols-outlined text-[20px]">library_books</span>
-              <span>Biblioteca</span>
-            </Link>
-            <Link href="/aula/progreso" className="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-label-md text-label-md transition-all">
-              <span className="material-symbols-outlined text-[20px]">monitoring</span>
-              <span>Mi Progreso</span>
-            </Link>
-        </div>
-        
-        {/* Profile Snippet */}
-        <div className="px-4 pt-4 mt-2">
-           <div className="bg-surface-container/50 rounded-2xl p-4 flex items-center justify-between border border-outline-variant/30 hover:bg-surface-container transition-colors cursor-pointer group">
-              <div className="flex items-center gap-3">
-                 <div className="relative">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-secondary to-primary p-[2px]">
-                       <div className="w-full h-full bg-surface-container-lowest rounded-full border-2 border-surface-container-lowest overflow-hidden flex items-center justify-center text-secondary font-bold text-sm">
-                          EL
-                       </div>
-                    </div>
-                    <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-secondary rounded-full border-2 border-surface-container-lowest"></div>
-                 </div>
-                 <div className="flex flex-col">
-                    <span className="font-label-md text-on-surface font-bold truncate max-w-[100px]">Elena M.</span>
-                    <span className="font-label-xs text-secondary font-semibold">Premium</span>
-                 </div>
+        {/* Perfil Real del Usuario Logueado (No más Elena M. hardcodeada) */}
+        <div className="px-4 pt-4 border-t border-black/5">
+          {user ? (
+            <div className="bg-neutral-50 rounded-2xl p-3.5 flex items-center justify-between border border-black/5 shadow-inner">
+              <div className="flex items-center gap-3 overflow-hidden">
+                <div className="w-10 h-10 rounded-full bg-[#133a73] flex items-center justify-center text-white font-bold text-xs shrink-0 shadow-sm">
+                  {initials}
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <span className="font-bold text-xs text-neutral-900 truncate">
+                    {displayName}
+                  </span>
+                  <span className="text-[11px] text-neutral-500 truncate">
+                    {isSubscriber ? 'Membresía Activa' : 'Cuenta Gratuita'}
+                  </span>
+                </div>
               </div>
-              <span className="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors">more_vert</span>
-           </div>
+              <Link 
+                href="/api/auth/signout" 
+                title="Cerrar sesión"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-neutral-400 hover:text-red-600 hover:bg-red-50 transition-colors shrink-0"
+              >
+                <span className="material-symbols-outlined text-[18px]">logout</span>
+              </Link>
+            </div>
+          ) : (
+            <Link 
+              href="/login" 
+              className="flex items-center justify-center gap-2 w-full py-3 rounded-full bg-[#001531] text-white text-xs font-bold shadow-sm hover:bg-[#133a73] transition-colors"
+            >
+              <span className="material-symbols-outlined text-[16px]">login</span>
+              <span>Iniciar Sesión</span>
+            </Link>
+          )}
         </div>
       </aside>
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 relative">
-        {/* Decorative background glow */}
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-secondary-fixed/20 blur-[100px] rounded-full pointer-events-none -translate-y-1/2 translate-x-1/3"></div>
-        
-        <main className="flex-1 p-6 md:p-10 relative z-10 overflow-y-auto">
+        <main className="flex-1 p-4 sm:p-6 md:p-10 relative z-10 overflow-y-auto">
           {children}
         </main>
       </div>

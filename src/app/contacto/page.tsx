@@ -2,7 +2,7 @@ import { Hero } from '@/components/Hero';
 
 export default function ContactoPage() {
   return (
-    <div className="min-h-screen bg-surface">
+    <div className="min-h-screen bg-surface pt-20">
       {/* Header Banner */}
       <div className="bg-primary-container text-on-primary-container py-12 lg:py-20 text-center px-6">
         <h1 className="font-display-md lg:font-display-lg font-bold tracking-tight mb-4">Contacto</h1>

@@ -27,7 +27,7 @@ export default function RootLayout({
       </head>
       <body className="bg-background font-body-md text-on-surface antialiased min-h-screen flex flex-col">
         <Header />
-        <main className="w-full pt-20 flex-grow bg-background flex flex-col">
+        <main className="w-full flex-grow flex flex-col">
           {children}
         </main>
         <Footer />

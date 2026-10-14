@@ -8,15 +8,14 @@ export function Footer() {
           
           <div className="lg:col-span-2 space-y-space-md pr-space-md">
             <div className="flex items-center gap-space-sm">
-              <img 
-                alt="Libre de Ansiedad Logo" 
-                className="h-8 w-auto object-contain brightness-0 invert" 
-                src="https://lh3.googleusercontent.com/aida/AEtjO1WAjJ6_ECtFRxRaJ3lFJHnhgHTcK6LdiwldYzEYFmFbRaEM-HBp7ScP1MWd_lH-53059TFnGXNoPFV6z3HftDSG0zgCu-L2jUgb5q8VrTs3nKJIPf5HKYRdzowO7y8BJqJBYlPmXMM3oyZ5YlWf6lEUozR-tZWK5cYZbfzj3Lf9uMu0R2dOFLFGlCUVhs9KS827jD_Lv8o9Htt6N87_pSZUomwZe1E6kGFXBOdEkRCah3oc6n97XRpvQZM"
-              />
+              <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center border border-white/20 shadow-sm">
+                <span className="material-symbols-outlined text-white text-[20px]">psychology</span>
+              </div>
               <span className="font-title-md text-title-md text-on-primary tracking-tight font-bold">
                 Libre de Ansiedad
               </span>
             </div>
+
             <p className="font-body-sm text-body-sm text-on-primary-container max-w-sm">
               Un espacio para aprender y cuidar tu bienestar emocional y mental con rigor científico y calidez humana.
             </p>

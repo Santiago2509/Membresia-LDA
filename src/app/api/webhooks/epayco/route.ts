@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { sendWelcomeSubscriberEmail } from '@/lib/email';
 
 export async function GET() {
   return NextResponse.json({
@@ -117,12 +118,19 @@ export async function POST(req: NextRequest) {
          }
       }
 
+      let isNewUser = false;
+      let generatedPassword = '';
+
       // Si no existe, crearlo
       if (!userId) {
-        const tempPassword = crypto.randomBytes(12).toString('hex'); // Contraseña segura aleatoria
+        isNewUser = true;
+        // Contraseña clara, amigable y segura (ej: LDA-592814)
+        const randomPin = Math.floor(100000 + Math.random() * 900000);
+        generatedPassword = `LDA-${randomPin}`;
+
         const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
           email: customerEmail,
-          password: tempPassword,
+          password: generatedPassword,
           email_confirm: true, // Auto-confirmar el email
           user_metadata: {
             full_name: customerName || 'Miembro',
@@ -131,14 +139,7 @@ export async function POST(req: NextRequest) {
 
         if (createError) throw createError;
         if (newUser.user) {
-           userId = newUser.user.id;
-           
-           // Opcional: Podríamos enviar un correo aquí pidiéndole que restablezca su contraseña,
-           // pero como supabase mandaría un reset password, podemos dispararlo:
-           await supabaseAdmin.auth.admin.generateLink({
-             type: 'recovery',
-             email: customerEmail,
-           });
+          userId = newUser.user.id;
         }
       }
 
@@ -175,6 +176,18 @@ export async function POST(req: NextRequest) {
               current_period_end: periodEnd.toISOString(),
               epayco_subscription_id: x_ref_payco,
             });
+        }
+
+        // Enviar correo de bienvenida con credenciales
+        try {
+          await sendWelcomeSubscriberEmail({
+            to: customerEmail,
+            name: customerName,
+            password: generatedPassword,
+            isNewUser,
+          });
+        } catch (emailErr) {
+          console.error('Error enviando correo de bienvenida al suscriptor:', emailErr);
         }
       }
     } else {
