@@ -178,8 +178,19 @@ export async function POST(req: NextRequest) {
         }
       }
     } else {
-       console.log('Transacción no aceptada, código:', data.x_cod_response);
-       // Podríamos marcar la membresía como fallida aquí si es una renovación
+      console.log('Transacción no aceptada o rechazada, código:', data.x_cod_response);
+      const customerEmail = data.x_customer_email || data.email || data.customer_email;
+      if (customerEmail) {
+        const { data: userList } = await supabaseAdmin.auth.admin.listUsers();
+        const existingUser = userList?.users?.find(u => u.email === customerEmail);
+        if (existingUser) {
+          await supabaseAdmin
+            .from('memberships')
+            .update({ status: 'past_due' })
+            .eq('user_id', existingUser.id);
+          console.log(`Membresía del usuario ${customerEmail} marcada como past_due.`);
+        }
+      }
     }
 
     // Marcar webhook como procesado
