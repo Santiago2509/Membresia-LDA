@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import ContentCard from '@/components/ContentCard';
+import AulaVisitorGate from '@/components/AulaVisitorGate';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0; // Datos frescos de sesión y contenidos
@@ -30,8 +31,9 @@ export default async function AulaDashboard() {
   // =========================================================================
   if (!user) {
     return (
-      <div className="max-w-3xl mx-auto py-12 sm:py-20 px-4">
-        <div className="bg-white rounded-3xl p-8 sm:p-14 text-center border border-black/8 shadow-[0_8px_30px_rgba(0,0,0,0.04)] space-y-8">
+      <AulaVisitorGate>
+        <div className="max-w-3xl mx-auto py-12 sm:py-20 px-4">
+          <div className="bg-white rounded-3xl p-8 sm:p-14 text-center border border-black/8 shadow-[0_8px_30px_rgba(0,0,0,0.04)] space-y-8">
           
           <div className="w-20 h-20 rounded-3xl bg-primary/10 flex items-center justify-center mx-auto text-primary shadow-inner">
             <span className="material-symbols-outlined text-[40px]">school</span>
@@ -105,11 +107,11 @@ export default async function AulaDashboard() {
               <span className="material-symbols-outlined text-[15px]">arrow_forward</span>
             </Link>
           </div>
-
         </div>
       </div>
-    );
-  }
+    </AulaVisitorGate>
+  );
+}
 
   // =========================================================================
   // CASO 2: USUARIO AUTENTICADO

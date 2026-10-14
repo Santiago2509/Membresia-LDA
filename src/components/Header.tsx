@@ -19,11 +19,20 @@ export function Header() {
     // Detectar sesión activa en Supabase
     try {
       const supabase = createSupabaseBrowserClient();
-      supabase.auth.getUser().then(({ data }) => {
-        setCurrentUser(data.user || null);
+      
+      supabase.auth.getSession().then(({ data }: { data: any }) => {
+        if (data?.session?.user) {
+          setCurrentUser(data.session.user);
+        }
       });
 
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      supabase.auth.getUser().then(({ data }: { data: any }) => {
+        if (data?.user) {
+          setCurrentUser(data.user);
+        }
+      });
+
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
         setCurrentUser(session?.user || null);
       });
 

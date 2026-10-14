@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import SidebarProfile from '@/components/SidebarProfile';
 
 export const dynamic = 'force-dynamic';
 
@@ -101,41 +102,13 @@ export default async function AulaLayout({ children }: { children: React.ReactNo
           </Link>
         </div>
         
-        {/* Perfil Real del Usuario Logueado (No más Elena M. hardcodeada) */}
-        <div className="px-4 pt-4 border-t border-black/5">
-          {user ? (
-            <div className="bg-neutral-50 rounded-2xl p-3.5 flex items-center justify-between border border-black/5 shadow-inner">
-              <div className="flex items-center gap-3 overflow-hidden">
-                <div className="w-10 h-10 rounded-full bg-[#133a73] flex items-center justify-center text-white font-bold text-xs shrink-0 shadow-sm">
-                  {initials}
-                </div>
-                <div className="flex flex-col min-w-0">
-                  <span className="font-bold text-xs text-neutral-900 truncate">
-                    {displayName}
-                  </span>
-                  <span className="text-[11px] text-neutral-500 truncate">
-                    {isSubscriber ? 'Membresía Activa' : 'Cuenta Gratuita'}
-                  </span>
-                </div>
-              </div>
-              <Link 
-                href="/api/auth/signout" 
-                title="Cerrar sesión"
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-neutral-400 hover:text-red-600 hover:bg-red-50 transition-colors shrink-0"
-              >
-                <span className="material-symbols-outlined text-[18px]">logout</span>
-              </Link>
-            </div>
-          ) : (
-            <Link 
-              href="/login" 
-              className="flex items-center justify-center gap-2 w-full py-3 rounded-full bg-[#001531] text-white text-xs font-bold shadow-sm hover:bg-[#133a73] transition-colors"
-            >
-              <span className="material-symbols-outlined text-[16px]">login</span>
-              <span>Iniciar Sesión</span>
-            </Link>
-          )}
-        </div>
+        {/* Perfil Real del Usuario Logueado con recuperación automática de sesión */}
+        <SidebarProfile 
+          initialUser={user}
+          initialDisplayName={displayName}
+          initialInitials={initials}
+          initialIsSubscriber={isSubscriber}
+        />
       </aside>
 
       {/* Main Content Area */}
