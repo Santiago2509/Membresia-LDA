@@ -2,6 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
+export async function GET() {
+  return NextResponse.json({
+    status: 'online',
+    service: 'Webhook ePayco - Libre de Ansiedad',
+    message: 'El endpoint está activo y listo para recibir confirmaciones de pago (POST).',
+    timestamp: new Date().toISOString(),
+  });
+}
+
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
