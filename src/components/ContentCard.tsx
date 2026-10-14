@@ -69,6 +69,7 @@ export default function ContentCard({ item }: ContentCardProps) {
   return (
     <Link 
       href={`/aula/contenido/${item.id}`}
+      prefetch={false}
       className="group relative bg-white rounded-3xl border border-black/8 overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_16px_36px_rgba(0,0,0,0.12)] hover:-translate-y-1.5 transition-all duration-300 flex flex-col h-full"
     >
       {/* 16:9 Thumbnail Header */}

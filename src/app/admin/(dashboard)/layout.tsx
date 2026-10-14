@@ -1,51 +1,15 @@
 import { redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
-import { createServerClient } from '@supabase/ssr';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { verifyAdmin } from '@/lib/authAdmin';
 import { AdminNav } from './AdminNav';
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const cookieStore = await cookies();
+  const auth = await verifyAdmin();
 
-  // 1. Leer sesión del usuario desde las cookies
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() { return cookieStore.getAll(); },
-        setAll() {},
-      },
-    }
-  );
-
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
+  if (!auth) {
     redirect('/admin/login');
   }
 
-  // 2. Verificar rol en la tabla dedicada 'admins' o en 'profiles'
-  const { data: adminRecord } = await supabaseAdmin
-    .from('admins')
-    .select('email, full_name')
-    .eq('id', user.id)
-    .single();
-
-  let adminEmail = adminRecord?.email;
-
-  if (!adminRecord) {
-    const { data: profile } = await supabaseAdmin
-      .from('profiles')
-      .select('role, email')
-      .eq('id', user.id)
-      .single();
-
-    if (!profile || profile.role !== 'admin') {
-      redirect('/aula');
-    }
-    adminEmail = profile.email;
-  }
+  const adminEmail = auth.profile?.email || auth.user?.email || '';
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-surface-container-low font-body-md text-on-surface">

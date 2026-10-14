@@ -4,7 +4,7 @@ import { verifyAdmin } from '@/lib/authAdmin';
 
 export async function POST(req: NextRequest) {
   try {
-    const auth = await verifyAdmin();
+    const auth = await verifyAdmin(req);
     if (!auth) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }

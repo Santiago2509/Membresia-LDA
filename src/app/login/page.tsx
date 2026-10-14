@@ -46,10 +46,13 @@ export default function LoginPage() {
           .eq('id', data.user.id)
           .single();
 
+        const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+        const redirectParam = params?.get('redirect');
+
         if (profile?.role === 'admin') {
-          window.location.href = '/admin';
+          window.location.href = redirectParam || '/admin';
         } else {
-          window.location.href = '/aula';
+          window.location.href = redirectParam || '/aula';
         }
       }
     } catch (err: any) {

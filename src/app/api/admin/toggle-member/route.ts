@@ -3,7 +3,7 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { verifyAdmin } from '@/lib/authAdmin';
 
 export async function POST(req: NextRequest) {
-  const auth = await verifyAdmin();
+  const auth = await verifyAdmin(req);
   if (!auth) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
   const { membershipId, newStatus } = await req.json();

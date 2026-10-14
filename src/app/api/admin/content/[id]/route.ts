@@ -7,7 +7,7 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await verifyAdmin();
+  const auth = await verifyAdmin(req);
   if (!auth) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
   const { id } = await params;
@@ -28,7 +28,7 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await verifyAdmin();
+  const auth = await verifyAdmin(req);
   if (!auth) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
   const { id } = await params;
@@ -88,7 +88,7 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await verifyAdmin();
+  const auth = await verifyAdmin(req);
   if (!auth) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
   const { id } = await params;

@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -42,8 +42,8 @@ export async function proxy(request: NextRequest) {
     return redirectResponse;
   }
 
-  // La protección de rutas y permisos de admin la gestiona de forma segura y autoritativa
-  // el AdminLayout en el servidor, evitando rebotes en navegaciones cliente (RSC)
+  // La protección de rutas y permisos la gestiona de forma segura y autoritativa
+  // el AdminLayout y AulaLayout en el servidor, evitando desincronizaciones de sesión
   return supabaseResponse;
 }
 

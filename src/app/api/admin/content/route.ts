@@ -4,7 +4,7 @@ import { verifyAdmin } from '@/lib/authAdmin';
 import { getVideoThumbnail } from '@/lib/videoUtils';
 
 export async function POST(req: NextRequest) {
-  const auth = await verifyAdmin();
+  const auth = await verifyAdmin(req);
   if (!auth) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
   const body = await req.json();

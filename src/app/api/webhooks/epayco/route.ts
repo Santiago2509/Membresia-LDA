@@ -91,7 +91,42 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // 3. Procesar si la transacción fue Aceptada (Código 1 o Aceptada o success)
+    // 3. Filtrar si la transacción pertenece a la Membresía de Libre de Ansiedad
+    // Dado que la cuenta de ePayco de la empresa se usa también para otros cobros (sesiones individuales, consultas, links de pago),
+    // verificamos que la transacción corresponda específicamente a la membresía.
+    const expectedPlanId = process.env.EPAYCO_PLAN_ID || 'a29e87ce7cb8b4eef061e42';
+    const planId = data.x_extra3 || data.x_id_plan || data.x_plan || data.id_plan || '';
+    const description = (data.x_description || data.description || '').toLowerCase();
+    const currency = (data.x_currency_code || data.currency || '').toUpperCase();
+    const amount = parseFloat(data.x_amount || data.amount || '0');
+    const extra9 = (data.x_extra9_epayco || '').toLowerCase();
+
+    const isMembershipTransaction = 
+      planId === expectedPlanId ||
+      description.includes('adquiere acceso a contenido premium') ||
+      description.includes('libre de ansiedad') ||
+      description.includes('membresia') ||
+      description.includes('membresía') ||
+      (currency === 'USD' && amount <= 30 && !extra9.startsWith('payco_link'));
+
+    if (!isMembershipTransaction) {
+      console.log(`[ePayco Webhook] Transacción omitida (Ref: ${x_ref_payco}): corresponde a otro servicio de la empresa ("${data.x_description || 'Sin descripción'}"), no a la Membresía.`);
+
+      await supabaseAdmin
+        .from('webhook_events')
+        .update({ 
+          status: 'failed', 
+          error_message: `Omitido: corresponde a otro servicio de la empresa (${data.x_description || 'no-membresia'})` 
+        })
+        .eq('epayco_reference', x_ref_payco);
+
+      return NextResponse.json({ 
+        message: 'Transacción recibida pero omitida: no corresponde a la Membresía de Libre de Ansiedad.',
+        reference: x_ref_payco 
+      }, { status: 200 });
+    }
+
+    // 4. Procesar si la transacción de Membresía fue Aceptada
     const isAprobada = 
       data.x_cod_response === '1' || 
       data.x_response === 'Aceptada' || 
@@ -100,107 +135,139 @@ export async function POST(req: NextRequest) {
       data.status === 'success';
 
     if (isAprobada) {
-      const customerEmail = data.x_customer_email || data.email || data.customer_email;
-      const customerName = `${data.x_customer_name || data.name || ''} ${data.x_customer_last_name || data.last_name || ''}`.trim();
+      const rawEmail = data.x_customer_email || data.email || data.customer_email;
+      const customerName = `${data.x_customer_name || data.name || ''} ${data.x_customer_last_name || data.last_name || ''}`.trim() || 'Miembro';
 
-      if (!customerEmail) {
+      if (!rawEmail) {
         throw new Error('No se recibió email del cliente');
       }
 
-      // Buscar si el usuario ya existe por email usando la API de Admin
-      const { data: userList, error: listError } = await supabaseAdmin.auth.admin.listUsers();
-      let userId = null;
+      const customerEmail = rawEmail.trim().toLowerCase();
 
-      if (!listError && userList.users) {
-         const existingUser = userList.users.find(u => u.email === customerEmail);
-         if (existingUser) {
-           userId = existingUser.id;
-         }
+      // =========================================================================
+      // PASO 1: VERIFICAR Y CREAR USUARIO PRIMERO EN SUPABASE
+      // =========================================================================
+      let userId: string | null = null;
+      let isNewUser = false;
+      let confirmedPassword = '';
+
+      // Primero consultar si el usuario ya existe en profiles
+      const { data: existingProfile } = await supabaseAdmin
+        .from('profiles')
+        .select('id, email')
+        .eq('email', customerEmail)
+        .single();
+
+      if (existingProfile) {
+        userId = existingProfile.id;
+        isNewUser = false;
+        console.log(`Usuario existente encontrado en profiles: ${customerEmail} (ID: ${userId})`);
+      } else {
+        // Consultar en Auth
+        const { data: userList } = await supabaseAdmin.auth.admin.listUsers().catch(() => ({ data: null }));
+        const existingAuthUser = userList?.users?.find(u => u.email?.toLowerCase() === customerEmail);
+        
+        if (existingAuthUser) {
+          userId = existingAuthUser.id;
+          isNewUser = false;
+          console.log(`Usuario existente encontrado en auth: ${customerEmail} (ID: ${userId})`);
+        }
       }
 
-      let isNewUser = false;
-      let generatedPassword = '';
-
-      // Si no existe, crearlo
+      // Si es un usuario 100% nuevo, crearlo en Supabase Auth con contraseña garantizada
       if (!userId) {
         isNewUser = true;
-        // Contraseña clara, amigable y segura (ej: LDA-592814)
         const randomPin = Math.floor(100000 + Math.random() * 900000);
-        generatedPassword = `LDA-${randomPin}`;
+        confirmedPassword = `LDA-${randomPin}`;
 
+        console.log(`Creando nuevo usuario en Supabase Auth: ${customerEmail}`);
         const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
           email: customerEmail,
-          password: generatedPassword,
+          password: confirmedPassword,
           email_confirm: true, // Auto-confirmar el email
           user_metadata: {
-            full_name: customerName || 'Miembro',
+            full_name: customerName,
           }
         });
 
-        if (createError) throw createError;
-        if (newUser.user) {
-          userId = newUser.user.id;
+        if (createError) {
+          console.error('Error creando usuario en Supabase Auth:', createError);
+          throw new Error(`Error al registrar usuario: ${createError.message}`);
         }
+
+        if (!newUser.user) {
+          throw new Error('No se pudo obtener el usuario creado de Supabase Auth');
+        }
+
+        userId = newUser.user.id;
+        console.log(`Usuario creado exitosamente con ID: ${userId}`);
       }
 
-      if (userId) {
-        // Crear o actualizar la membresía
-        const periodStart = new Date();
-        const periodEnd = new Date();
-        periodEnd.setMonth(periodEnd.getMonth() + 1); // +1 Mes
+      // =========================================================================
+      // PASO 2: GARANTIZAR PERFIL Y ACTIVAR MEMBRESÍA EN LA BASE DE DATOS
+      // =========================================================================
+      // Asegurar perfil
+      await supabaseAdmin.from('profiles').upsert({
+        id: userId,
+        email: customerEmail,
+        full_name: customerName,
+        role: 'user',
+        updated_at: new Date().toISOString(),
+      });
 
-        // Buscar si ya tiene membresia
-        const { data: existingMembership } = await supabaseAdmin
-          .from('memberships')
-          .select('id')
-          .eq('user_id', userId)
-          .single();
+      // Activar membresía por 30 días
+      const periodStart = new Date();
+      const periodEnd = new Date();
+      periodEnd.setDate(periodEnd.getDate() + 30); // 30 días garantizados
 
-        if (existingMembership) {
-          await supabaseAdmin
-            .from('memberships')
-            .update({
-              status: 'active',
-              current_period_start: periodStart.toISOString(),
-              current_period_end: periodEnd.toISOString(),
-              epayco_subscription_id: x_ref_payco,
-            })
-            .eq('user_id', userId);
-        } else {
-          await supabaseAdmin
-            .from('memberships')
-            .insert({
-              user_id: userId,
-              status: 'active',
-              current_period_start: periodStart.toISOString(),
-              current_period_end: periodEnd.toISOString(),
-              epayco_subscription_id: x_ref_payco,
-            });
-        }
+      const { error: memError } = await supabaseAdmin.from('memberships').upsert({
+        user_id: userId,
+        status: 'active',
+        current_period_start: periodStart.toISOString(),
+        current_period_end: periodEnd.toISOString(),
+        epayco_subscription_id: x_ref_payco,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id' });
 
-        // Enviar correo de bienvenida con credenciales
-        try {
-          await sendWelcomeSubscriberEmail({
-            to: customerEmail,
-            name: customerName,
-            password: generatedPassword,
-            isNewUser,
-          });
-        } catch (emailErr) {
-          console.error('Error enviando correo de bienvenida al suscriptor:', emailErr);
-        }
+      if (memError) {
+        console.error('Error al guardar membresía en base de datos:', memError);
+        throw new Error(`Error al activar membresía: ${memError.message}`);
       }
+
+      console.log(`Membresía activada en base de datos para ${customerEmail}.`);
+
+      // =========================================================================
+      // PASO 3: SÓLO AHORA QUE EL USUARIO Y MEMBRESÍA ESTÁN 100% VALIDADOS, ENVIAR EMAIL
+      // =========================================================================
+      try {
+        console.log(`Enviando correo de bienvenida a ${customerEmail}...`);
+        const emailResult = await sendWelcomeSubscriberEmail({
+          to: customerEmail,
+          name: customerName,
+          password: isNewUser ? confirmedPassword : undefined,
+          isNewUser,
+        });
+        console.log('Resultado envío de correo:', emailResult);
+      } catch (emailErr) {
+        console.error('Error enviando correo de bienvenida al suscriptor:', emailErr);
+      }
+
     } else {
       console.log('Transacción no aceptada o rechazada, código:', data.x_cod_response);
-      const customerEmail = data.x_customer_email || data.email || data.customer_email;
-      if (customerEmail) {
-        const { data: userList } = await supabaseAdmin.auth.admin.listUsers();
-        const existingUser = userList?.users?.find(u => u.email === customerEmail);
-        if (existingUser) {
+      const rawEmail = data.x_customer_email || data.email || data.customer_email;
+      if (rawEmail) {
+        const customerEmail = rawEmail.trim().toLowerCase();
+        const { data: profile } = await supabaseAdmin
+          .from('profiles')
+          .select('id')
+          .eq('email', customerEmail)
+          .single();
+
+        if (profile) {
           await supabaseAdmin
             .from('memberships')
-            .update({ status: 'past_due' })
-            .eq('user_id', existingUser.id);
+            .update({ status: 'past_due', updated_at: new Date().toISOString() })
+            .eq('user_id', profile.id);
           console.log(`Membresía del usuario ${customerEmail} marcada como past_due.`);
         }
       }

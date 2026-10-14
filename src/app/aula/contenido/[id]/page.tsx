@@ -7,6 +7,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { getEmbedUrl } from '@/lib/videoUtils';
 
+export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export default async function ContenidoPage({ params }: { params: Promise<{ id: string }> }) {
@@ -64,7 +65,7 @@ export default async function ContenidoPage({ params }: { params: Promise<{ id: 
           .from('memberships')
           .select('status, current_period_end')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
 
         if (membership && membership.status === 'active') {
           const isExpired = membership.current_period_end 
@@ -234,7 +235,7 @@ export default async function ContenidoPage({ params }: { params: Promise<{ id: 
           <div className="pt-2 flex flex-col sm:flex-row justify-center items-center gap-3">
             {requireLogin ? (
               <Link 
-                href="/login" 
+                href={`/login?redirect=/aula/contenido/${content.id}`} 
                 className="w-full sm:w-auto px-7 py-3.5 bg-[#133a73] text-white rounded-full font-label-md text-sm font-bold hover:bg-[#001531] transition-all shadow-md"
               >
                 Iniciar sesión para acceder
