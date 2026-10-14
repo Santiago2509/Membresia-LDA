@@ -13,13 +13,37 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const formData = await req.formData();
-    const data: Record<string, string> = {};
-    formData.forEach((value, key) => {
-      data[key] = value.toString();
-    });
+    let data: Record<string, string> = {};
+    const contentType = req.headers.get('content-type') || '';
 
-    console.log('Webhook ePayco recibido:', data.x_ref_payco);
+    if (contentType.includes('application/json')) {
+      const json = await req.json().catch(() => ({}));
+      Object.entries(json).forEach(([key, val]) => {
+        data[key] = val != null ? val.toString() : '';
+      });
+    } else {
+      const formData = await req.formData().catch(() => null);
+      if (formData) {
+        formData.forEach((value, key) => {
+          data[key] = value.toString();
+        });
+      } else {
+        const text = await req.text().catch(() => '');
+        const params = new URLSearchParams(text);
+        params.forEach((value, key) => {
+          data[key] = value;
+        });
+      }
+    }
+
+    // Respaldo: si venían por query params en la URL
+    if (Object.keys(data).length === 0) {
+      req.nextUrl.searchParams.forEach((value, key) => {
+        data[key] = value;
+      });
+    }
+
+    console.log('Webhook ePayco recibido. Ref:', data.x_ref_payco);
 
     // 1. Validar firma de ePayco
     const p_cust_id = process.env.EPAYCO_P_CUST_ID;
