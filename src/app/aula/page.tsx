@@ -116,9 +116,9 @@ export default async function AulaDashboard() {
   // Verificar permisos (Admin o Membresía Activa)
   // =========================================================================
   const [profileResult, adminResult, membershipResult, contentsResult] = await Promise.all([
-    supabaseAdmin.from('profiles').select('*').eq('id', user.id).single(),
-    supabaseAdmin.from('admins').select('id').eq('id', user.id).single(),
-    supabaseAdmin.from('memberships').select('*').eq('user_id', user.id).single(),
+    supabaseAdmin.from('profiles').select('*').eq('id', user.id).maybeSingle(),
+    supabaseAdmin.from('admins').select('id').eq('id', user.id).maybeSingle(),
+    supabaseAdmin.from('memberships').select('*').eq('user_id', user.id).maybeSingle(),
     supabaseAdmin.from('content').select('*').order('created_at', { ascending: false }).limit(6),
   ]);
 

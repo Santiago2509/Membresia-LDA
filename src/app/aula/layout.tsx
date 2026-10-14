@@ -50,7 +50,7 @@ export default async function AulaLayout({ children }: { children: React.ReactNo
         .from('memberships')
         .select('status')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
       isSubscriber = membership?.status === 'active';
     }
   }
