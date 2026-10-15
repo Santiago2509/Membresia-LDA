@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { createSupabaseBrowserClient } from '@/lib/supabase';
+import SignOutButton from '@/components/SignOutButton';
 
 export function Header() {
   const pathname = usePathname();
@@ -273,12 +274,12 @@ export function Header() {
                 >
                   Mi Aula Virtual
                 </Link>
-                <Link 
-                  href="/api/auth/signout?type=member"
+                <SignOutButton 
+                  type="member"
                   className="w-full py-2.5 rounded-full bg-red-50 text-red-700 text-center font-bold text-xs hover:bg-red-100 border border-red-200"
                 >
                   Cerrar Sesión
-                </Link>
+                </SignOutButton>
               </>
             ) : (
               <Link 

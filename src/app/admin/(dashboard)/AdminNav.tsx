@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import SignOutButton from '@/components/SignOutButton';
 
 export function AdminNav({ adminEmail }: { adminEmail: string }) {
   const pathname = usePathname();
@@ -129,13 +130,13 @@ export function AdminNav({ adminEmail }: { adminEmail: string }) {
 
             <div className="pt-4 border-t border-outline-variant/30">
               <p className="text-label-xs text-on-surface-variant font-bold truncate">{adminEmail}</p>
-              <Link
-                href="/api/auth/signout?type=admin"
+              <SignOutButton
+                type="admin"
                 className="mt-3 flex items-center gap-2 px-3 py-2 text-error font-label-md font-bold hover:bg-error/10 rounded-xl transition-colors"
               >
                 <span className="material-symbols-outlined text-[20px]">logout</span>
                 <span>Cerrar sesión</span>
-              </Link>
+              </SignOutButton>
             </div>
           </div>
           <div className="flex-1" onClick={() => setMobileOpen(false)} />
@@ -190,13 +191,13 @@ export function AdminNav({ adminEmail }: { adminEmail: string }) {
             <p className="text-label-xs text-on-surface-variant font-bold truncate">{adminEmail}</p>
             <p className="text-label-xs text-secondary font-bold uppercase tracking-wider">Administrador</p>
           </div>
-          <Link
-            href="/api/auth/signout?type=admin"
-            className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-error font-label-md text-label-md transition-all group"
+          <SignOutButton
+            type="admin"
+            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-error font-label-md text-label-md transition-all group"
           >
             <span className="material-symbols-outlined text-[20px] group-hover:text-error transition-colors">logout</span>
             <span>Cerrar sesión</span>
-          </Link>
+          </SignOutButton>
         </div>
       </aside>
     </>

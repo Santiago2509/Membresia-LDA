@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { createSupabaseBrowserClient } from '@/lib/supabase';
+import SignOutButton from '@/components/SignOutButton';
 
 interface SidebarProfileProps {
   initialUser: any;
@@ -115,13 +116,13 @@ export default function SidebarProfile({
               </div>
             </Link>
 
-            <Link 
-              href="/api/auth/signout?type=member" 
+            <SignOutButton 
+              type="member"
               title="Cerrar sesión"
               className="w-8 h-8 rounded-lg flex items-center justify-center text-neutral-400 hover:text-red-600 hover:bg-red-50 transition-colors shrink-0 ml-1"
             >
               <span className="material-symbols-outlined text-[18px]">logout</span>
-            </Link>
+            </SignOutButton>
           </div>
 
           <Link

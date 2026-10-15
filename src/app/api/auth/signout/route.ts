@@ -1,10 +1,12 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: NextRequest) {
+// Solo POST: un GET puede ser disparado por prefetch del navegador/Next.js
+// y cerraría la sesión del usuario sin que haga clic.
+export async function POST() {
   const cookieStore = await cookies();
 
   const supabase = createServerClient(
@@ -24,11 +26,8 @@ export async function GET(request: NextRequest) {
     }
   );
 
-  await supabase.auth.signOut();
+  // scope 'local': cierra solo este dispositivo, no todas las sesiones del usuario
+  await supabase.auth.signOut({ scope: 'local' });
 
-  const url = new URL(request.url);
-  const type = url.searchParams.get('type');
-  const redirectPath = type === 'admin' ? '/admin/login' : '/login';
-
-  return NextResponse.redirect(new URL(redirectPath, process.env.NEXT_PUBLIC_SITE_URL || request.url));
+  return NextResponse.json({ ok: true });
 }

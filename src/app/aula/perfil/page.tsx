@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import Link from 'next/link';
+import SignOutButton from '@/components/SignOutButton';
 import { format, differenceInDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -209,13 +210,13 @@ export default async function PerfilPage() {
           </p>
         </div>
 
-        <Link
-          href="/api/auth/signout?type=member"
+        <SignOutButton
+          type="member"
           className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-red-50 text-red-700 hover:bg-red-600 hover:text-white font-bold text-xs transition-all border border-red-200/60 shadow-sm hover:shadow-md shrink-0 w-full sm:w-auto"
         >
           <span className="material-symbols-outlined text-[18px]">logout</span>
           <span>Cerrar Sesión</span>
-        </Link>
+        </SignOutButton>
       </div>
 
     </div>

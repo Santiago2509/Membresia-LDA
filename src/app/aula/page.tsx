@@ -4,6 +4,7 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import ContentCard from '@/components/ContentCard';
 import AulaVisitorGate from '@/components/AulaVisitorGate';
+import SignOutButton from '@/components/SignOutButton';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0; // Datos frescos de sesión y contenidos
@@ -177,12 +178,12 @@ export default async function AulaDashboard() {
             >
               Activar Membresía ($30 USD/mes)
             </Link>
-            <Link 
-              href="/api/auth/signout"
+            <SignOutButton 
+              type="member"
               className="w-full sm:w-auto px-6 py-3.5 rounded-full text-neutral-600 hover:bg-neutral-100 font-bold text-sm transition-colors"
             >
               Cerrar sesión
-            </Link>
+            </SignOutButton>
           </div>
         </div>
       </div>

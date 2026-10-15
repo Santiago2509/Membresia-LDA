@@ -18,9 +18,12 @@ export async function proxy(request: NextRequest) {
             request.cookies.set(name, value)
           );
           supabaseResponse = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          );
+          cookiesToSet.forEach(({ name, value, options }) => {
+            // Cookie de sesión: se borra al cerrar el navegador (se respetan los borrados maxAge 0)
+            const { maxAge, expires, ...rest } = options || {};
+            const finalOptions = maxAge === 0 ? options : rest;
+            supabaseResponse.cookies.set(name, value, finalOptions);
+          });
         },
       },
     }
