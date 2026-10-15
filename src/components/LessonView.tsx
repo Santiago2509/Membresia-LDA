@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -28,85 +28,148 @@ export default function LessonView({
 
   const epaycoPlanUrl = "https://subscription-landing.epayco.co/plan/a29e87ce7cb8b4eef061e42";
 
+  // Función para validar acceso con la sesión activa
+  const checkSessionAccess = useCallback(async (session: any, isMounted: () => boolean) => {
+    if (!session?.access_token || !session?.user) {
+      if (isMounted()) {
+        setRequireLogin(true);
+        setHasAccess(false);
+        setIsCheckingClient(false);
+      }
+      return;
+    }
+
+    const supabase = createSupabaseBrowserClient();
+
+    try {
+      // Intento 1: Validar vía API segura /api/content/access con Bearer Token
+      const response = await fetch('/api/content/access', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ contentId }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (!isMounted()) return;
+
+        if (result.authorized) {
+          setContent(result.content);
+          setHasAccess(true);
+          setRequireLogin(false);
+          setIsExpired(false);
+          setIsCheckingClient(false);
+          return;
+        } else if (result.subscriptionExpired) {
+          setHasAccess(false);
+          setRequireLogin(false);
+          setIsExpired(true);
+          setIsCheckingClient(false);
+          return;
+        }
+      }
+    } catch {
+      // Fallback a consulta directa si la API tuvo problemas de red
+    }
+
+    // Intento 2 (Fallback directo con cliente autenticado de Supabase)
+    try {
+      const { data: membership } = await supabase
+        .from('memberships')
+        .select('status, current_period_end')
+        .eq('user_id', session.user.id)
+        .maybeSingle();
+
+      const { data: fullContent } = await supabase
+        .from('content')
+        .select('*')
+        .eq('id', contentId)
+        .maybeSingle();
+
+      if (!isMounted()) return;
+
+      if (membership && membership.status === 'active') {
+        const expired = membership.current_period_end
+          ? new Date(membership.current_period_end) < new Date()
+          : false;
+
+        if (!expired && fullContent) {
+          setContent(fullContent);
+          setHasAccess(true);
+          setRequireLogin(false);
+          setIsExpired(false);
+          setIsCheckingClient(false);
+          return;
+        } else if (expired) {
+          setIsExpired(true);
+          setHasAccess(false);
+          setRequireLogin(false);
+          setIsCheckingClient(false);
+          return;
+        }
+      }
+
+      setHasAccess(false);
+      setRequireLogin(false);
+      setIsExpired(true);
+    } catch {
+      if (isMounted()) {
+        setRequireLogin(true);
+        setHasAccess(false);
+      }
+    } finally {
+      if (isMounted()) {
+        setIsCheckingClient(false);
+      }
+    }
+  }, [contentId]);
+
   useEffect(() => {
-    // Si el servidor ya validó el acceso, no necesitamos hacer nada más
+    // Si el servidor ya validó el acceso inicialmente, no hay necesidad de esperar
     if (initialHasAccess) {
       setIsCheckingClient(false);
       return;
     }
 
-    let isMounted = true;
+    let mounted = true;
+    const isMounted = () => mounted;
+    const supabase = createSupabaseBrowserClient();
 
-    async function verifyClientSession() {
-      try {
-        const supabase = createSupabaseBrowserClient();
-        
-        // 1. Obtener la sesión activa del navegador (localStorage / cookies)
-        const { data: { session } } = await supabase.auth.getSession();
-
-        if (!session?.access_token) {
-          // El usuario realmente no ha iniciado sesión en este navegador
-          if (isMounted) {
-            setRequireLogin(true);
-            setHasAccess(false);
+    // 1. Verificar sesión inmediata en caché
+    supabase.auth.getSession().then(({ data }: { data: any }) => {
+      if (!mounted) return;
+      if (data?.session) {
+        checkSessionAccess(data.session, isMounted);
+      } else {
+        // Si no hay sesión inmediata, esperar un instante por onAuthStateChange
+        setTimeout(() => {
+          if (mounted && !hasAccess) {
             setIsCheckingClient(false);
           }
-          return;
-        }
-
-        // 2. Validar con nuestro backend seguro enviando el Bearer Token del usuario
-        const response = await fetch('/api/content/access', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({ contentId }),
-        });
-
-        if (!response.ok) {
-          throw new Error('Error al consultar permisos');
-        }
-
-        const result = await response.json();
-
-        if (!isMounted) return;
-
-        if (result.authorized) {
-          // Acceso concedido al usuario activo
-          setContent(result.content);
-          setHasAccess(true);
-          setRequireLogin(false);
-          setIsExpired(false);
-        } else if (result.subscriptionExpired) {
-          // Usuario autenticado pero su membresía expiró
-          setHasAccess(false);
-          setRequireLogin(false);
-          setIsExpired(true);
-        } else {
-          // No autorizado
-          setHasAccess(false);
-          setRequireLogin(result.requireLogin ?? true);
-        }
-      } catch (err) {
-        console.error('Error al sincronizar acceso en cliente:', err);
-        if (isMounted) {
-          setRequireLogin(true);
-          setHasAccess(false);
-        }
-      } finally {
-        if (isMounted) {
-          setIsCheckingClient(false);
-        }
+        }, 800);
       }
-    }
+    });
 
-    verifyClientSession();
+    // 2. Escuchar evento de autenticación (garantiza captura cuando el cliente restaura la sesión)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
+      if (!mounted) return;
+      if (session) {
+        checkSessionAccess(session, isMounted);
+      } else {
+        setRequireLogin(true);
+        setHasAccess(false);
+        setIsCheckingClient(false);
+      }
+    });
 
     return () => {
-      isMounted = false;
+      mounted = false;
+      subscription.unsubscribe();
     };
-  }, [contentId, initialHasAccess]);
+  }, [contentId, initialHasAccess, checkSessionAccess, hasAccess]);
 
   const embedUrl = content?.url ? getEmbedUrl(content.url) : null;
 
@@ -144,7 +207,7 @@ export default function LessonView({
       </div>
 
       {/* =========================================================================
-          ESTADO 1: VERIFICANDO ACCESO (Solo visible una fracción de segundo si hubo desincronización)
+          ESTADO 1: VERIFICANDO ACCESO (Solo visible una fracción de segundo)
           ========================================================================= */}
       {isCheckingClient ? (
         <div className="bg-white rounded-3xl p-12 text-center border border-black/10 shadow-sm space-y-4">
@@ -155,31 +218,23 @@ export default function LessonView({
         </div>
       ) : hasAccess ? (
         /* =========================================================================
-            ESTADO 2: CONTENIDO DESBLOQUEADO (El usuario ya inició sesión y está activo)
-            Texto inicial -> Video en el centro -> Título y texto explicativo posterior
+            ESTADO 2: CONTENIDO DESBLOQUEADO (Miembro Activo)
             ========================================================================= */
         <div className="bg-white rounded-3xl p-6 sm:p-10 border border-black/10 shadow-[0_4px_24px_rgba(0,0,0,0.03)] space-y-8">
           
-          {/* 1. Texto al Inicio (Antes del video - Reflexión / Bienvenida) */}
-          {content?.body && (
-            <article className="prose prose-slate prose-base sm:prose-lg max-w-none 
-              prose-p:text-neutral-800 prose-p:leading-relaxed prose-p:my-3
-              prose-headings:text-[#001531] prose-headings:font-bold 
-              prose-a:text-[#133a73] hover:prose-a:underline prose-a:font-bold
-              prose-strong:text-neutral-900 prose-strong:font-bold
-              prose-blockquote:border-l-[#133a73] prose-blockquote:text-neutral-600 prose-blockquote:italic">
-              <ReactMarkdown 
-                remarkPlugins={[remarkGfm]}
-                components={{
-                  p: ({ children }) => <p className="whitespace-pre-line mb-3">{children}</p>,
-                }}
-              >
-                {content.body}
-              </ReactMarkdown>
-            </article>
-          )}
+          {/* 1. Título principal de la lección */}
+          <div className="space-y-3 pb-2 border-b border-black/5">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl text-[#001531] font-bold tracking-tight leading-tight">
+              {content?.title}
+            </h1>
+            {content?.description && (
+              <p className="text-sm sm:text-base text-neutral-600 italic border-l-4 border-[#133a73] pl-4 py-1">
+                {content.description}
+              </p>
+            )}
+          </div>
 
-          {/* 2. Video Intermedio En el Centro (YouTube / Vimeo) */}
+          {/* 2. Video o Portada si existe */}
           {embedUrl ? (
             <div className="w-full aspect-video rounded-2xl overflow-hidden shadow-2xl border border-black/10 relative bg-black my-6">
               <iframe 
@@ -190,8 +245,8 @@ export default function LessonView({
                 title={content?.title || 'Video de la lección'}
               />
             </div>
-          ) : content?.thumbnail_url && !content?.body ? (
-            <div className="w-full aspect-video rounded-2xl overflow-hidden shadow-lg border border-black/10 relative bg-neutral-100 my-6">
+          ) : content?.thumbnail_url ? (
+            <div className="w-full aspect-video rounded-2xl overflow-hidden shadow-md border border-black/10 relative bg-neutral-100 my-4">
               <img 
                 src={content.thumbnail_url} 
                 alt={content.title} 
@@ -200,39 +255,47 @@ export default function LessonView({
             </div>
           ) : null}
 
-          {/* 3. Título de la Lección y Explicación Posterior */}
-          <div className="space-y-4 pt-2">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl text-[#001531] font-bold tracking-tight leading-tight">
-              {content?.title}
-            </h1>
+          {/* 3. Contenido editorial completo (Texto y ejercicios guiados) */}
+          {content?.body && (
+            <article className="prose prose-slate prose-base sm:prose-lg max-w-none 
+              prose-p:text-neutral-800 prose-p:leading-relaxed prose-p:my-4
+              prose-headings:text-[#001531] prose-headings:font-bold prose-headings:tracking-tight
+              prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg
+              prose-a:text-[#133a73] hover:prose-a:underline prose-a:font-bold
+              prose-strong:text-neutral-900 prose-strong:font-bold
+              prose-ul:my-4 prose-li:my-1.5 prose-li:text-neutral-800
+              prose-blockquote:border-l-4 prose-blockquote:border-l-[#133a73] prose-blockquote:bg-blue-50/50 prose-blockquote:p-4 prose-blockquote:rounded-r-2xl prose-blockquote:text-neutral-700">
+              <ReactMarkdown 
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  p: ({ children }) => <p className="whitespace-pre-line mb-4">{children}</p>,
+                }}
+              >
+                {content.body}
+              </ReactMarkdown>
+            </article>
+          )}
 
-            {content?.description && (
-              <p className="text-sm sm:text-base text-neutral-600 italic border-l-4 border-[#133a73] pl-4 py-1">
-                {content.description}
-              </p>
-            )}
+          {/* 4. Texto explicativo posterior al video si aplica */}
+          {content?.body_after && (
+            <article className="prose prose-slate prose-base sm:prose-lg max-w-none pt-6 border-t border-black/5
+              prose-p:text-neutral-800 prose-p:leading-relaxed prose-p:my-4
+              prose-headings:text-[#001531] prose-headings:font-bold
+              prose-a:text-[#133a73] hover:prose-a:underline prose-a:font-bold
+              prose-strong:text-neutral-900 prose-strong:font-bold
+              prose-blockquote:border-l-4 prose-blockquote:border-l-[#12a04a] prose-blockquote:bg-emerald-50/50 prose-blockquote:p-4 prose-blockquote:rounded-r-2xl prose-blockquote:text-neutral-700">
+              <ReactMarkdown 
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  p: ({ children }) => <p className="whitespace-pre-line mb-4">{children}</p>,
+                }}
+              >
+                {content.body_after}
+              </ReactMarkdown>
+            </article>
+          )}
 
-            {/* Texto posterior al video (Explicación detallada, ejercicios, conclusiones) */}
-            {content?.body_after && (
-              <article className="prose prose-slate prose-base sm:prose-lg max-w-none pt-4 border-t border-black/5
-                prose-p:text-neutral-800 prose-p:leading-relaxed prose-p:my-3
-                prose-headings:text-[#001531] prose-headings:font-bold 
-                prose-a:text-[#133a73] hover:prose-a:underline prose-a:font-bold
-                prose-strong:text-neutral-900 prose-strong:font-bold
-                prose-blockquote:border-l-[#12a04a] prose-blockquote:text-neutral-600">
-                <ReactMarkdown 
-                  remarkPlugins={[remarkGfm]}
-                  components={{
-                    p: ({ children }) => <p className="whitespace-pre-line mb-3">{children}</p>,
-                  }}
-                >
-                  {content.body_after}
-                </ReactMarkdown>
-              </article>
-            )}
-          </div>
-
-          {/* 4. Enlace / Botón Final de la Lección (Opcional) */}
+          {/* 5. Material Complementario / Descarga */}
           {content?.resource_url && (
             <div className="pt-6 border-t border-black/10 flex flex-col sm:flex-row items-center justify-between gap-4 bg-neutral-50 p-6 rounded-2xl">
               <div>
@@ -259,7 +322,7 @@ export default function LessonView({
         </div>
       ) : (
         /* =========================================================================
-            ESTADO 3: BLOQUEO (Solo para visitantes que NO han iniciado sesión o membresía vencida)
+            ESTADO 3: BLOQUEO (Solo para visitantes no logueados o vencidos)
             ========================================================================= */
         <div className="bg-white rounded-3xl p-8 sm:p-12 text-center border border-black/10 shadow-sm space-y-6">
           <div className="w-16 h-16 rounded-full bg-neutral-100 flex items-center justify-center mx-auto text-[#133a73]">

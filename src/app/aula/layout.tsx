@@ -94,6 +94,14 @@ export default async function AulaLayout({ children }: { children: React.ReactNo
           </Link>
 
           <Link 
+            href="/aula/perfil" 
+            className="flex items-center gap-3 px-4 py-3 rounded-2xl text-neutral-700 hover:bg-neutral-100 font-label-md text-xs font-bold transition-all"
+          >
+            <span className="material-symbols-outlined text-[20px] text-amber-600">badge</span>
+            <span>Mi Perfil & Suscripción</span>
+          </Link>
+
+          <Link 
             href="/" 
             className="flex items-center gap-3 px-4 py-3 rounded-2xl text-neutral-700 hover:bg-neutral-100 font-label-md text-xs font-bold transition-all"
           >

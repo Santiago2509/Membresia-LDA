@@ -18,18 +18,37 @@ export default function AdminLogin() {
     // Usar el cliente SSR que guarda sesión en cookies
     const supabase = createSupabaseBrowserClient();
 
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email,
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+      email: email.trim().toLowerCase(),
       password,
     });
 
-    if (signInError) {
+    if (signInError || !signInData?.user) {
       setError('Correo o contraseña incorrectos.');
       setLoading(false);
-    } else {
-      // Hard redirect para que el servidor lea las cookies de sesión
-      window.location.href = '/admin';
+      return;
     }
+
+    // Verificar que sea efectivamente un administrador
+    const [profileRes, adminRes] = await Promise.all([
+      supabase.from('profiles').select('role').eq('id', signInData.user.id).maybeSingle(),
+      supabase.from('admins').select('id').eq('id', signInData.user.id).maybeSingle(),
+    ]);
+
+    const isAdmin =
+      profileRes.data?.role === 'admin' ||
+      adminRes.data !== null ||
+      ['santiago@gmail.com', 'adminlibredeansiedad@gmail.com', 'admin@serenamente.com'].includes(signInData.user.email || '');
+
+    if (!isAdmin) {
+      await supabase.auth.signOut();
+      setError('No tienes permisos de administrador. Por favor ingresa desde el aula virtual de miembros.');
+      setLoading(false);
+      return;
+    }
+
+    // Redirigir al panel de administración
+    window.location.href = '/admin';
   };
 
   return (

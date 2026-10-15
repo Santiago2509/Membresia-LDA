@@ -44,16 +44,19 @@ export default function LoginPage() {
           .from('profiles')
           .select('role')
           .eq('id', data.user.id)
-          .single();
+          .maybeSingle();
+
+        // El admin nunca podrá iniciar sesión por la parte de los miembros
+        if (profile?.role === 'admin') {
+          await supabase.auth.signOut();
+          setError('Esta sección es exclusiva para miembros suscriptores. Para ingresar al panel de administración, accede desde el login administrativo.');
+          setLoading(false);
+          return;
+        }
 
         const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
         const redirectParam = params?.get('redirect');
-
-        if (profile?.role === 'admin') {
-          window.location.href = redirectParam || '/admin';
-        } else {
-          window.location.href = redirectParam || '/aula';
-        }
+        window.location.href = redirectParam || '/aula';
       }
     } catch (err: any) {
       setError('Ocurrió un error inesperado al conectar. Inténtalo nuevamente.');

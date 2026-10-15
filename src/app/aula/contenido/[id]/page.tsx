@@ -87,6 +87,7 @@ export default async function ContenidoPage({ params }: { params: Promise<{ id: 
 
   return (
     <LessonView 
+      key={content.id}
       contentId={content.id}
       initialContent={initialContent}
       initialHasAccess={hasAccess}

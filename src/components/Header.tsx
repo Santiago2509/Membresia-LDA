@@ -194,10 +194,10 @@ export function Header() {
 
           {/* Icono de Perfil */}
           <Link 
-            href={currentUser ? "/aula" : "/login"} 
+            href={currentUser ? "/aula/perfil" : "/login"} 
             className="w-9 h-9 rounded-full bg-primary/10 hover:bg-primary text-primary hover:text-white transition-colors flex items-center justify-center shrink-0 border border-primary/20"
             aria-label="Perfil de usuario"
-            title={currentUser ? "Ir a mi Aula Virtual" : "Iniciar sesión"}
+            title={currentUser ? "Mi Perfil & Membresía" : "Iniciar sesión"}
           >
             <span className="material-symbols-outlined text-[18px]">
               {currentUser ? 'account_circle' : 'person'}
@@ -244,6 +244,16 @@ export function Header() {
               <span>Aula Virtual (Miembros)</span>
               <span className="material-symbols-outlined text-[18px]">school</span>
             </Link>
+            {currentUser && (
+              <Link 
+                href="/aula/perfil"
+                onClick={() => setMobileMenuOpen(false)}
+                className="px-4 py-2.5 rounded-xl font-bold text-sm flex items-center justify-between text-neutral-800 hover:bg-neutral-100"
+              >
+                <span>Mi Perfil & Vencimiento</span>
+                <span className="material-symbols-outlined text-[18px] text-amber-600">badge</span>
+              </Link>
+            )}
             <Link 
               href="/contacto"
               onClick={() => setMobileMenuOpen(false)}
@@ -255,13 +265,21 @@ export function Header() {
 
           <div className="pt-4 border-t border-black/10 flex flex-col gap-2">
             {currentUser ? (
-              <Link 
-                href="/aula"
-                onClick={() => setMobileMenuOpen(false)}
-                className="w-full py-3 rounded-full bg-[#001531] text-white text-center font-bold text-sm"
-              >
-                Mi Aula Virtual
-              </Link>
+              <>
+                <Link 
+                  href="/aula"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full py-3 rounded-full bg-[#001531] text-white text-center font-bold text-sm shadow-sm"
+                >
+                  Mi Aula Virtual
+                </Link>
+                <Link 
+                  href="/api/auth/signout?type=member"
+                  className="w-full py-2.5 rounded-full bg-red-50 text-red-700 text-center font-bold text-xs hover:bg-red-100 border border-red-200"
+                >
+                  Cerrar Sesión
+                </Link>
+              </>
             ) : (
               <Link 
                 href="/login"
