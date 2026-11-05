@@ -1,18 +1,25 @@
-'use client';
-
 import Link from 'next/link';
+import { EPAYCO_PLAN_URL, MEMBERSHIP_PRICE_LABEL } from '@/lib/membership';
 
-export function CheckoutButton() {
-  // Enlace directo al plan de suscripción de ePayco
-  const epaycoPlanUrl = "https://subscription-landing.epayco.co/plan/a29e87ce7cb8b4eef061e42";
+interface CheckoutButtonProps {
+  /** 'dark' para fondos claros (por defecto), 'light' para fondos oscuros. */
+  tone?: 'dark' | 'light';
+  label?: string;
+}
+
+export function CheckoutButton({ tone = 'dark', label }: CheckoutButtonProps) {
+  const toneClasses =
+    tone === 'light'
+      ? 'bg-white text-[#001531] hover:bg-[#f3efe6]'
+      : 'bg-[#001531] text-white hover:bg-[#133a73]';
 
   return (
-    <Link 
-      href={epaycoPlanUrl}
-      className="h-12 px-space-lg rounded-full bg-primary text-on-primary font-label-md text-label-md flex items-center justify-center gap-space-xs shadow-md hover:bg-primary/90 transition-all duration-200 hover:-translate-y-0.5 w-full sm:w-auto"
+    <Link
+      href={EPAYCO_PLAN_URL}
+      className={`group inline-flex h-13 items-center justify-center gap-3 rounded-full px-7 text-[15px] font-semibold transition-colors duration-200 w-full sm:w-auto ${toneClasses}`}
     >
-      <span>Comprar Membresía ($30 USD/mes)</span>
-      <span className="material-symbols-outlined text-[18px]">credit_card</span>
+      <span>{label || `Comenzar por ${MEMBERSHIP_PRICE_LABEL} al mes`}</span>
+      <span aria-hidden="true" className="transition-transform duration-200 group-hover:translate-x-1">→</span>
     </Link>
   );
 }

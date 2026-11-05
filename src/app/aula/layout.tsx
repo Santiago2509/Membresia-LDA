@@ -3,6 +3,7 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import SidebarProfile from '@/components/SidebarProfile';
+import { isAdminEmail, isMembershipActive } from '@/lib/membership';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,15 +45,15 @@ export default async function AulaLayout({ children }: { children: React.ReactNo
       initials = displayName.slice(0, 2).toUpperCase();
     }
 
-    if (profile?.role === 'admin') {
+    if (profile?.role === 'admin' || isAdminEmail(user.email)) {
       isSubscriber = true;
     } else {
       const { data: membership } = await supabaseAdmin
         .from('memberships')
-        .select('status')
+        .select('status, current_period_end')
         .eq('user_id', user.id)
         .maybeSingle();
-      isSubscriber = membership?.status === 'active';
+      isSubscriber = isMembershipActive(membership);
     }
   }
 

@@ -4,10 +4,58 @@ import { FAQSection } from '@/components/FAQSection';
 import Link from 'next/link';
 import { CheckoutButton } from '@/components/CheckoutButton';
 import ContentCard from '@/components/ContentCard';
+import { BrandStripe } from '@/components/BrandStripe';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { CONTENT_CARD_COLUMNS, MEMBERSHIP_PRICE_LABEL } from '@/lib/membership';
+import { toContentCard } from '@/lib/contentCards';
 
 export const revalidate = 0;
+
+const steps = [
+  {
+    title: 'Te suscribes con ePayco',
+    text: 'Pagas con tarjeta de forma segura. El cobro se renueva cada mes y puedes cancelarlo cuando quieras.',
+  },
+  {
+    title: 'Recibes tu acceso por correo',
+    text: 'En pocos minutos te llega un correo con tu usuario y una contraseña temporal, que puedes cambiar desde tu perfil.',
+  },
+  {
+    title: 'Entras al aula y avanzas a tu ritmo',
+    text: 'Todo el material queda disponible mientras tu membresía esté activa, desde el celular o el computador.',
+  },
+];
+
+const formats = [
+  {
+    name: 'Videos',
+    color: '#2b93d1',
+    text: 'Clases en las que Nelson explica qué pasa en tu cuerpo y en tu mente con la ansiedad, y cómo intervenir.',
+  },
+  {
+    name: 'Audios guiados',
+    color: '#12a04a',
+    text: 'Ejercicios de respiración y de aterrizaje para usar en el momento en que la ansiedad sube.',
+  },
+  {
+    name: 'Guías en PDF',
+    color: '#eeab52',
+    text: 'Hojas de trabajo y registros para practicar entre una lección y otra.',
+  },
+  {
+    name: 'Artículos',
+    color: '#d6006f',
+    text: 'Lecturas cortas para entender y repasar los conceptos clave cuando lo necesites.',
+  },
+];
+
+const priceIncludes = [
+  'Acceso a todo el material del aula',
+  'Contenido nuevo a medida que se publica',
+  'Guías descargables en PDF',
+  'Sin permanencia: cancelas cuando quieras',
+];
 
 export default async function Home() {
   const cookieStore = await cookies();
@@ -22,283 +70,172 @@ export default async function Home() {
     }
   );
 
-  // Traer los 4 contenidos más recientes desde Supabase
-  const { data: contents } = await supabase
+  // Solo las columnas que necesita la tarjeta (nunca el contenido completo)
+  const { data: rows } = await supabase
     .from('content')
-    .select('*')
+    .select(CONTENT_CARD_COLUMNS)
     .order('created_at', { ascending: false })
-    .limit(4);
+    .limit(3);
+
+  const contents = (rows || []).map(toContentCard);
 
   return (
     <>
-      {/* 1. Animación Cinemática de Entrada del Logo */}
+      {/* 1. Animación de entrada del logo (se mantiene tal cual) */}
       <AnimatedLogoIntro />
 
-      {/* 2. Hero Principal con Nelson Arturo y Propuesta Clínica */}
+      {/* 2. Presentación */}
       <Hero />
 
-      {/* =====================================================================
-          3. PILARES CLÍNICOS (El Enfoque Libre de Ansiedad)
-          ===================================================================== */}
-      <section className="py-16 lg:py-20 border-b border-black/5">
-        <div className="max-w-[1280px] mx-auto px-6 lg:px-12">
-          
-          <div className="text-center max-w-2xl mx-auto mb-12 space-y-3">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#133a73] bg-white/80 border border-black/5 px-3.5 py-1.5 rounded-full shadow-sm">
-              Metodología Comprobada
-            </span>
-            <h2 className="font-headline-lg text-2xl sm:text-3xl lg:text-4xl text-[#001531] font-bold tracking-tight">
-              ¿Por qué nuestro método funciona?
+      {/* 3. Cómo funciona */}
+      <section className="border-b border-black/10">
+        <div className="mx-auto grid max-w-[1200px] grid-cols-1 gap-12 px-5 py-20 sm:px-8 lg:grid-cols-12 lg:px-12 lg:py-28">
+          <div className="lg:col-span-4">
+            <BrandStripe className="mb-6" />
+            <h2 className="font-display text-4xl leading-tight tracking-[-0.01em] text-[#001531] sm:text-5xl">
+              Tres pasos y estás dentro.
             </h2>
-            <p className="font-body-md text-sm sm:text-base text-neutral-600">
-              Combinamos ciencia psicológica, ejercicios guiados y acompañamiento continuo para darte resultados duraderos.
+            <p className="mt-5 max-w-sm leading-relaxed text-neutral-600">
+              Todo el proceso es automático. No tienes que esperar a que alguien te habilite.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            
-            {/* Pilar 1 */}
-            <div className="bg-white/90 backdrop-blur-md rounded-2xl p-7 border border-black/10 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
-              <div className="w-12 h-12 rounded-xl bg-blue-50 text-[#133a73] flex items-center justify-center mb-5">
-                <span className="material-symbols-outlined text-[26px]">psychology</span>
-              </div>
-              <h3 className="font-title-md text-base sm:text-lg font-bold text-[#001531] mb-2">
-                Terapia Cognitivo-Conductual (TCC)
-              </h3>
-              <p className="font-body-sm text-sm text-neutral-600 leading-relaxed">
-                El modelo terapéutico de mayor respaldo científico mundial para reestructurar pensamientos intrusivos y desactivar respuestas de pánico.
-              </p>
-            </div>
-
-            {/* Pilar 2 */}
-            <div className="bg-white/90 backdrop-blur-md rounded-2xl p-7 border border-black/10 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
-              <div className="w-12 h-12 rounded-xl bg-green-50 text-[#12a04a] flex items-center justify-center mb-5">
-                <span className="material-symbols-outlined text-[26px]">self_improvement</span>
-              </div>
-              <h3 className="font-title-md text-base sm:text-lg font-bold text-[#001531] mb-2">
-                Herramientas para Momentos de Crisis
-              </h3>
-              <p className="font-body-sm text-sm text-neutral-600 leading-relaxed">
-                Protocolos SOS en audio para respiración diafragmática, aterrizaje sensorial (grounding) y freno del ritmo cardíaco acelerado.
-              </p>
-            </div>
-
-            {/* Pilar 3 */}
-            <div className="bg-white/90 backdrop-blur-md rounded-2xl p-7 border border-black/10 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
-              <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center mb-5">
-                <span className="material-symbols-outlined text-[26px]">lock_open</span>
-              </div>
-              <h3 className="font-title-md text-base sm:text-lg font-bold text-[#001531] mb-2">
-                Privacidad Total y a tu Ritmo
-              </h3>
-              <p className="font-body-sm text-sm text-neutral-600 leading-relaxed">
-                Sin desplazamientos ni horarios fijos. Accede al contenido de forma 100% anónima y segura desde tu computadora o celular.
-              </p>
-            </div>
-
-          </div>
-
+          <ol className="divide-y divide-black/10 border-y border-black/10 lg:col-span-7 lg:col-start-6">
+            {steps.map((step, i) => (
+              <li key={step.title} className="grid grid-cols-[3.5rem_1fr] gap-4 py-8 sm:grid-cols-[5rem_1fr] sm:gap-6">
+                <span className="font-display text-4xl leading-none text-[#12a04a] sm:text-5xl">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <div>
+                  <h3 className="text-xl font-semibold text-[#001531]">{step.title}</h3>
+                  <p className="mt-2 max-w-lg leading-relaxed text-neutral-600">{step.text}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
         </div>
       </section>
 
-      {/* =====================================================================
-          4. CONTENIDO RECIENTE (Dinámico desde Supabase)
-          ===================================================================== */}
-      <section className="py-16 lg:py-24 border-b border-black/5" id="cursos-destacados">
-        <div className="max-w-[1280px] mx-auto px-6 lg:px-12">
-          
-          {/* Header de la sección */}
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
-            <div className="space-y-2">
-              <div className="inline-flex items-center gap-1.5 text-[#133a73] font-label-md text-xs uppercase tracking-wider font-bold">
-                <span className="material-symbols-outlined text-[16px]">schedule</span>
-                <span>Actualizaciones del Aula</span>
-              </div>
-              <h2 className="font-headline-lg text-2xl sm:text-3xl lg:text-4xl text-[#001531] font-bold tracking-tight">
-                Contenido reciente
+      {/* 4. Qué incluye */}
+      <section id="que-incluye" className="bg-[#001531] text-white">
+        <div id="membresia-exclusiva" className="mx-auto max-w-[1200px] px-5 py-20 sm:px-8 lg:px-12 lg:py-28">
+          <div className="grid grid-cols-1 gap-12 lg:grid-cols-12">
+            <div className="lg:col-span-5">
+              <BrandStripe className="mb-6" />
+              <h2 className="font-display text-4xl leading-tight tracking-[-0.01em] sm:text-5xl">
+                Material para los momentos difíciles <em className="italic text-white/70">y para el trabajo de fondo.</em>
               </h2>
-              <p className="font-body-md text-sm sm:text-base text-neutral-600 max-w-xl">
-                Nuevas masterclasses, ejercicios guiados y conferencias clínicas añadidas a la plataforma.
-              </p>
             </div>
-            <div className="shrink-0">
-              <Link 
-                className="font-label-md text-sm text-[#133a73] hover:text-[#001531] font-bold flex items-center gap-1 transition-colors" 
+
+            <ul className="divide-y divide-white/15 border-y border-white/15 lg:col-span-7">
+              {formats.map((f) => (
+                <li key={f.name} className="grid grid-cols-1 gap-2 py-7 sm:grid-cols-[13rem_1fr] sm:gap-8">
+                  <div className="flex items-center gap-3">
+                    <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: f.color }} />
+                    <h3 className="font-display text-2xl">{f.name}</h3>
+                  </div>
+                  <p className="leading-relaxed text-white/75">{f.text}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      {/* 5. Contenido reciente (desde Supabase) */}
+      {contents.length > 0 && (
+        <section id="cursos-destacados" className="border-b border-black/10">
+          <div className="mx-auto max-w-[1200px] px-5 py-20 sm:px-8 lg:px-12 lg:py-28">
+            <div className="mb-12 flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
+              <div>
+                <BrandStripe className="mb-6" />
+                <h2 className="font-display text-4xl leading-tight tracking-[-0.01em] text-[#001531] sm:text-5xl">
+                  Lo último en el aula
+                </h2>
+              </div>
+              <Link
                 href="/catalogo"
+                className="text-[15px] font-semibold text-[#001531] underline decoration-black/25 underline-offset-[6px] hover:decoration-[#001531]"
               >
-                <span>Explorar catálogo completo</span>
-                <span className="material-symbols-outlined text-[18px]">chevron_right</span>
+                Ver todo el catálogo →
               </Link>
             </div>
-          </div>
 
-          {/* Grid de Contenido */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {contents && contents.length > 0 ? contents.map((item) => (
-              <ContentCard key={item.id} item={item} />
-            )) : (
-              <div className="col-span-1 md:col-span-2 lg:col-span-4 text-center py-12 text-neutral-500 bg-white rounded-3xl border border-black/5 shadow-sm">
-                No hay contenidos recientes publicados aún.
-              </div>
-            )}
+            <div className="grid grid-cols-1 gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
+              {contents.map((item) => (
+                <ContentCard key={item.id} item={item} />
+              ))}
+            </div>
           </div>
+        </section>
+      )}
 
+      {/* 6. Quién está detrás */}
+      <section className="border-b border-black/10">
+        <div className="mx-auto grid max-w-[1200px] grid-cols-1 gap-10 px-5 py-20 sm:px-8 lg:grid-cols-12 lg:px-12 lg:py-28">
+          <div className="lg:col-span-4">
+            <BrandStripe className="mb-6" />
+            <h2 className="font-display text-4xl leading-tight tracking-[-0.01em] text-[#001531] sm:text-5xl">
+              Quién está detrás
+            </h2>
+          </div>
+          <div className="space-y-6 lg:col-span-7 lg:col-start-6">
+            <p className="font-display text-2xl leading-snug text-[#001531] sm:text-[1.7rem]">
+              Libre de Ansiedad es la clínica del Psic. Nelson Arturo. Esta membresía reúne en un solo lugar
+              el material que prepara para sus pacientes.
+            </p>
+            <p className="max-w-2xl leading-relaxed text-neutral-700">
+              Explicaciones claras, ejercicios guiados y guías prácticas, pensadas para que puedas seguir
+              trabajando entre sesiones o empezar por tu cuenta, con un lenguaje sencillo y sin necesidad de
+              conocimientos previos.
+            </p>
+            <p className="max-w-2xl border-l-2 border-[#eeab52] pl-4 text-sm leading-relaxed text-neutral-600">
+              Este contenido es educativo y no reemplaza la atención psicológica individual. Si estás atravesando
+              una crisis, busca ayuda profesional de inmediato.{' '}
+              <Link href="/contacto" className="font-semibold text-[#001531] underline underline-offset-4">
+                Escríbenos para agendar una consulta
+              </Link>
+              .
+            </p>
+          </div>
         </div>
       </section>
 
-      {/* =====================================================================
-          5. EXPERIENCIA DE MEMBRESÍA: QUÉ INCLUYE
-          ===================================================================== */}
-      <section className="py-16 lg:py-24 bg-[#001531] text-white relative overflow-hidden" id="membresia-exclusiva">
-        <div className="pointer-events-none absolute -top-40 right-0 h-96 w-96 rounded-full bg-[#133a73]/40 blur-3xl"></div>
-        <div className="pointer-events-none absolute bottom-0 left-10 h-80 w-80 rounded-full bg-[#12a04a]/20 blur-3xl"></div>
-        
-        <div className="relative max-w-[1280px] mx-auto px-6 lg:px-12">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-            
-            {/* Columna Izquierda: Mensaje de Valor */}
-            <div className="lg:col-span-6 space-y-5">
-              <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3.5 py-1.5 backdrop-blur-md border border-white/10">
-                <span className="material-symbols-outlined text-green-400 text-[18px]">verified</span>
-                <span className="text-xs font-bold text-white uppercase tracking-wider">
-                  Membresía Todo Incluido
-                </span>
+      {/* 7. Precio */}
+      <section id="precio-membresia" className="border-b border-black/10">
+        <div className="mx-auto max-w-[1200px] px-5 py-20 sm:px-8 lg:px-12 lg:py-28">
+          <div className="grid grid-cols-1 gap-12 rounded-[2rem] bg-white p-8 sm:p-12 lg:grid-cols-2 lg:p-16">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#133a73]">Membresía mensual</p>
+              <div className="mt-5 flex items-baseline gap-3">
+                <span className="font-display text-7xl leading-none text-[#001531] sm:text-8xl">$30</span>
+                <span className="text-lg text-neutral-500">USD al mes</span>
               </div>
-              
-              <h2 className="font-display-lg text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight leading-tight">
-                Todo lo que necesitas para recuperar tu tranquilidad
-              </h2>
-              
-              <p className="text-sm sm:text-base text-neutral-300 leading-relaxed max-w-xl">
-                Al suscribirte obtienes acceso ilimitado e inmediato a toda nuestra videoteca clínica, audioteca de emergencia y herramientas guiadas.
+              <p className="mt-6 max-w-sm leading-relaxed text-neutral-600">
+                Una sola tarifa. Todo el contenido actual y el que se publique mientras tu membresía esté activa.
               </p>
-
-              <div className="pt-2">
-                <CheckoutButton />
-              </div>
             </div>
 
-            {/* Columna Derecha: Tarjetas de Beneficios */}
-            <div className="lg:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-              
-              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/10 space-y-2">
-                <span className="material-symbols-outlined text-green-400 text-[28px]">smart_display</span>
-                <h4 className="font-bold text-white text-base">Cursos en Video HD</h4>
-                <p className="text-xs text-neutral-300 leading-relaxed">
-                  Lecciones estructuradas paso a paso para entender tu sistema nervioso y reprogramar tus pensamientos.
-                </p>
+            <div className="flex flex-col justify-between gap-10">
+              <ul className="divide-y divide-black/10 border-y border-black/10">
+                {priceIncludes.map((line) => (
+                  <li key={line} className="flex items-start gap-3 py-4 text-neutral-800">
+                    <span aria-hidden="true" className="mt-0.5 text-[#12a04a]">✓</span>
+                    <span>{line}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="space-y-4">
+                <CheckoutButton label={`Suscribirme por ${MEMBERSHIP_PRICE_LABEL} al mes`} />
+                <p className="text-sm text-neutral-500">Pago procesado de forma segura por ePayco.</p>
               </div>
-
-              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/10 space-y-2">
-                <span className="material-symbols-outlined text-blue-400 text-[28px]">headphones</span>
-                <h4 className="font-bold text-white text-base">Audios SOS Guiados</h4>
-                <p className="text-xs text-neutral-300 leading-relaxed">
-                  Ejercicios de respiración profunda y relajación para momentos de crisis o ataques de pánico.
-                </p>
-              </div>
-
-              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/10 space-y-2">
-                <span className="material-symbols-outlined text-amber-400 text-[28px]">description</span>
-                <h4 className="font-bold text-white text-base">Cuadernos Clínicos</h4>
-                <p className="text-xs text-neutral-300 leading-relaxed">
-                  Plantillas y guías en PDF descargables para monitorear tu evolución diaria.
-                </p>
-              </div>
-
-              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/10 space-y-2">
-                <span className="material-symbols-outlined text-purple-400 text-[28px]">devices</span>
-                <h4 className="font-bold text-white text-base">Acceso 24/7 Total</h4>
-                <p className="text-xs text-neutral-300 leading-relaxed">
-                  Ingresa desde tu celular, tablet o computador en cualquier momento y lugar.
-                </p>
-              </div>
-
             </div>
-
           </div>
         </div>
       </section>
 
-      {/* =====================================================================
-          6. TARJETA DE PRECIO TRANSPARENTE ($30 USD / Mes)
-          ===================================================================== */}
-      <section className="py-16 lg:py-24 border-b border-black/5" id="precio-membresia">
-        <div className="max-w-[700px] mx-auto px-6 text-center">
-          
-          <div className="bg-white rounded-3xl p-8 sm:p-10 border border-black/10 shadow-xl relative overflow-hidden">
-            
-            <div className="inline-block bg-green-100 text-green-800 text-xs font-extrabold uppercase tracking-wider px-3.5 py-1 rounded-full mb-4">
-              Suscripción Mensual Simple
-            </div>
-
-            <h3 className="text-2xl sm:text-3xl font-bold text-[#001531] mb-2">
-              Membresía Libre de Ansiedad
-            </h3>
-            <p className="text-neutral-600 text-sm mb-6 max-w-md mx-auto">
-              Todo el contenido y las actualizaciones por una tarifa plana mensual sin permanencia.
-            </p>
-
-            {/* Precio */}
-            <div className="flex items-baseline justify-center gap-1.5 mb-6">
-              <span className="text-4xl sm:text-5xl font-extrabold text-[#001531]">$30</span>
-              <span className="text-lg font-bold text-neutral-500">USD</span>
-              <span className="text-sm text-neutral-500 font-medium">/ mes</span>
-            </div>
-
-            {/* Checklist */}
-            <div className="space-y-3 text-left max-w-sm mx-auto mb-8 text-sm text-neutral-700">
-              <div className="flex items-center gap-2.5">
-                <span className="material-symbols-outlined text-green-600 text-[18px]">check_circle</span>
-                <span>Acceso completo a todos los cursos y lecciones</span>
-              </div>
-              <div className="flex items-center gap-2.5">
-                <span className="material-symbols-outlined text-green-600 text-[18px]">check_circle</span>
-                <span>Audios de relajación y protocolos de emergencia</span>
-              </div>
-              <div className="flex items-center gap-2.5">
-                <span className="material-symbols-outlined text-green-600 text-[18px]">check_circle</span>
-                <span>Material descargable en PDF y hojas de trabajo</span>
-              </div>
-              <div className="flex items-center gap-2.5">
-                <span className="material-symbols-outlined text-green-600 text-[18px]">check_circle</span>
-                <span><strong>Cancela cuando quieras</strong> con total libertad</span>
-              </div>
-            </div>
-
-            <div className="flex justify-center">
-              <CheckoutButton />
-            </div>
-
-            <p className="text-xs text-neutral-500 mt-4 flex items-center justify-center gap-1.5">
-              <span className="material-symbols-outlined text-[15px] text-neutral-600">lock</span>
-              <span>Pago 100% cifrado y seguro procesado a través de ePayco</span>
-            </p>
-
-          </div>
-
-        </div>
-      </section>
-
-      {/* 7. Preguntas Frecuentes con Acordeón */}
+      {/* 8. Preguntas frecuentes */}
       <FAQSection />
-
-      {/* =====================================================================
-          8. LLAMADO A LA ACCIÓN FINAL (Pre-Footer)
-          ===================================================================== */}
-      <section className="py-16 lg:py-20 bg-gradient-to-tr from-[#133a73] via-[#001531] to-[#0e4b52] text-white text-center relative overflow-hidden">
-        <div className="relative max-w-[800px] mx-auto px-6 space-y-5">
-          <span className="material-symbols-outlined text-green-400 text-[40px]">spa</span>
-          <h2 className="font-display-lg text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight">
-            Da el primer paso hacia una vida en paz
-          </h2>
-          <p className="text-sm sm:text-base text-neutral-300 max-w-xl mx-auto leading-relaxed">
-            La ansiedad no tiene por qué gobernar tu rutina diaria. Con las herramientas correctas y orientación profesional, es posible recuperar la serenidad.
-          </p>
-          <div className="pt-2 flex justify-center">
-            <CheckoutButton />
-          </div>
-        </div>
-      </section>
     </>
   );
 }

@@ -5,11 +5,16 @@ import ContentCard, { ContentCardItem } from '@/components/ContentCard';
 
 interface CatalogoClientProps {
   initialContents: ContentCardItem[];
+  initialType?: string;
 }
 
-export default function CatalogoClient({ initialContents }: CatalogoClientProps) {
+const VALID_TYPES = ['all', 'video', 'audio', 'article', 'pdf'];
+
+export default function CatalogoClient({ initialContents, initialType }: CatalogoClientProps) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedType, setSelectedType] = useState<string>('all');
+  const [selectedType, setSelectedType] = useState<string>(
+    initialType && VALID_TYPES.includes(initialType) ? initialType : 'all'
+  );
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
   // Extract unique categories from content
@@ -25,11 +30,11 @@ export default function CatalogoClient({ initialContents }: CatalogoClientProps)
 
   // Types list with friendly labels and icons
   const typeOptions = [
-    { key: 'all', label: 'Todo el Material', icon: 'grid_view' },
-    { key: 'video', label: 'Masterclasses en Video', icon: 'play_circle' },
-    { key: 'audio', label: 'Audios de Calma', icon: 'headphones' },
-    { key: 'article', label: 'Lecturas y Artículos', icon: 'menu_book' },
-    { key: 'pdf', label: 'Guías y PDF', icon: 'picture_as_pdf' },
+    { key: 'all', label: 'Todo', icon: 'grid_view' },
+    { key: 'video', label: 'Videos', icon: 'play_circle' },
+    { key: 'audio', label: 'Audios guiados', icon: 'headphones' },
+    { key: 'article', label: 'Artículos', icon: 'menu_book' },
+    { key: 'pdf', label: 'Guías PDF', icon: 'description' },
   ];
 
   // Filter content
@@ -77,7 +82,7 @@ export default function CatalogoClient({ initialContents }: CatalogoClientProps)
   return (
     <div className="space-y-10">
       {/* Search & Filter Toolbar */}
-      <div className="bg-white/80 backdrop-blur-md rounded-3xl p-6 sm:p-8 border border-black/8 shadow-[0_8px_30px_rgba(0,0,0,0.04)] space-y-6">
+      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-black/10 space-y-6">
         
         {/* Search Bar */}
         <div className="relative w-full">
@@ -180,13 +185,13 @@ export default function CatalogoClient({ initialContents }: CatalogoClientProps)
 
       {/* Cards Grid */}
       {filteredContents.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12">
           {filteredContents.map((item) => (
             <ContentCard key={item.id} item={item} />
           ))}
         </div>
       ) : (
-        <div className="bg-white/70 backdrop-blur-md rounded-3xl p-12 text-center border border-black/8 space-y-4 max-w-lg mx-auto">
+        <div className="bg-white rounded-3xl p-12 text-center border border-black/8 space-y-4 max-w-lg mx-auto">
           <div className="w-16 h-16 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-400 mx-auto">
             <span className="material-symbols-outlined text-3xl">search_off</span>
           </div>

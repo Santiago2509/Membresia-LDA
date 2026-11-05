@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { createSupabaseBrowserClient } from '@/lib/supabase';
 import Link from 'next/link';
+import { isAdminEmail } from '@/lib/membership';
 
 export default function AdminLogin() {
   const [email, setEmail] = useState('');
@@ -38,7 +39,7 @@ export default function AdminLogin() {
     const isAdmin =
       profileRes.data?.role === 'admin' ||
       adminRes.data !== null ||
-      ['santiago@gmail.com', 'adminlibredeansiedad@gmail.com', 'admin@serenamente.com'].includes(signInData.user.email || '');
+      isAdminEmail(signInData.user.email);
 
     if (!isAdmin) {
       await supabase.auth.signOut();

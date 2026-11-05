@@ -1,11 +1,19 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import CatalogoClient from '@/components/CatalogoClient';
+import { BrandStripe } from '@/components/BrandStripe';
+import { CONTENT_CARD_COLUMNS } from '@/lib/membership';
+import { toContentCard } from '@/lib/contentCards';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-export default async function CatalogoPage() {
+export default async function CatalogoPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tipo?: string }>;
+}) {
+  const { tipo } = await searchParams;
   const cookieStore = await cookies();
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -18,35 +26,29 @@ export default async function CatalogoPage() {
     }
   );
 
-  // Fetch all contents ordered by created_at DESC
-  const { data: contents } = await supabase
+  // Solo las columnas de la tarjeta: el contenido completo (url, texto, recursos)
+  // nunca se envía al navegador desde el catálogo.
+  const { data: rows } = await supabase
     .from('content')
-    .select('*')
+    .select(CONTENT_CARD_COLUMNS)
     .order('created_at', { ascending: false });
 
+  const contents = (rows || []).map(toContentCard);
+
   return (
-    <div className="min-h-screen bg-[#e6e6e6] pt-28 pb-20">
-      <div className="max-w-[1280px] mx-auto px-6 lg:px-12">
-        
-        {/* Harmonious Calming Header (No harsh dark blue blocks) */}
-        <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-16 space-y-4">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/80 backdrop-blur-md border border-black/8 text-[#133a73] font-bold text-xs uppercase tracking-wider shadow-sm">
-            <span className="material-symbols-outlined text-[16px]">local_library</span>
-            <span>Biblioteca Clínica & Aula Virtual</span>
-          </div>
-
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[#001531] tracking-tight leading-tight">
-            Catálogo de Lecciones y Recursos
+    <div className="min-h-screen pt-28 pb-24">
+      <div className="max-w-[1200px] mx-auto px-5 sm:px-8 lg:px-12">
+        <div className="max-w-2xl mb-12 sm:mb-16">
+          <BrandStripe className="mb-6" />
+          <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl leading-[1.05] tracking-[-0.02em] text-[#001531]">
+            Catálogo
           </h1>
-
-          <p className="text-neutral-600 text-base sm:text-lg leading-relaxed">
-            Explora las masterclasses, audios guiados de respiración y artículos clínicos diseñados paso a paso para ayudarte a recuperar tu tranquilidad.
+          <p className="mt-5 text-lg leading-relaxed text-neutral-600">
+            Videos, audios guiados, guías y artículos para entender tu ansiedad y aprender a manejarla, paso a paso.
           </p>
         </div>
 
-        {/* Interactive Filter & Cards Grid */}
-        <CatalogoClient initialContents={contents || []} />
-
+        <CatalogoClient initialContents={contents} initialType={tipo} />
       </div>
     </div>
   );

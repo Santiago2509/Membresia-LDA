@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import LessonView from '@/components/LessonView';
+import { isAdminEmail, isMembershipActive } from '@/lib/membership';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -52,7 +53,7 @@ export default async function ContenidoPage({ params }: { params: Promise<{ id: 
       const isAdmin = 
         adminRecordRes.data !== null || 
         profileRes.data?.role === 'admin' ||
-        ['santiago@gmail.com', 'adminlibredeansiedad@gmail.com', 'admin@serenamente.com'].includes(user.email || '');
+        isAdminEmail(user.email);
 
       if (isAdmin) {
         hasAccess = true;
@@ -64,13 +65,8 @@ export default async function ContenidoPage({ params }: { params: Promise<{ id: 
           .eq('user_id', user.id)
           .maybeSingle();
 
-        if (membership && membership.status === 'active') {
-          const isExpired = membership.current_period_end 
-            ? new Date(membership.current_period_end) < new Date() 
-            : false;
-          if (!isExpired) {
-            hasAccess = true;
-          }
+        if (isMembershipActive(membership)) {
+          hasAccess = true;
         }
       }
     }

@@ -5,13 +5,18 @@ import { cookies } from 'next/headers';
 import ContentCard from '@/components/ContentCard';
 import AulaVisitorGate from '@/components/AulaVisitorGate';
 import SignOutButton from '@/components/SignOutButton';
+import { BrandStripe } from '@/components/BrandStripe';
+import { CONTENT_CARD_COLUMNS, EPAYCO_PLAN_URL, MEMBERSHIP_PRICE_LABEL, isAdminEmail, isMembershipActive } from '@/lib/membership';
+import { toContentCard } from '@/lib/contentCards';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0; // Datos frescos de sesión y contenidos
 
 export default async function AulaDashboard() {
   const cookieStore = await cookies();
-  const epaycoPlanUrl = "https://subscription-landing.epayco.co/plan/a29e87ce7cb8b4eef061e42";
+  const epaycoPlanUrl = EPAYCO_PLAN_URL;
   
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -93,7 +98,7 @@ export default async function AulaDashboard() {
                 href={epaycoPlanUrl}
                 className="w-full py-3 rounded-full bg-amber-400 hover:bg-amber-300 text-neutral-900 text-center font-bold text-xs shadow-sm transition-all"
               >
-                Obtener Membresía ($30 USD)
+                Obtener Membresía ({MEMBERSHIP_PRICE_LABEL}/mes)
               </Link>
             </div>
 
@@ -118,35 +123,28 @@ export default async function AulaDashboard() {
   // CASO 2: USUARIO AUTENTICADO
   // Verificar permisos (Admin o Membresía Activa)
   // =========================================================================
-  const [profileResult, adminResult, membershipResult, contentsResult] = await Promise.all([
+  const [profileResult, adminResult, membershipResult, contentsResult, typesResult] = await Promise.all([
     supabaseAdmin.from('profiles').select('*').eq('id', user.id).maybeSingle(),
     supabaseAdmin.from('admins').select('id').eq('id', user.id).maybeSingle(),
     supabaseAdmin.from('memberships').select('*').eq('user_id', user.id).maybeSingle(),
-    supabaseAdmin.from('content').select('*').order('created_at', { ascending: false }).limit(6),
+    supabaseAdmin.from('content').select(CONTENT_CARD_COLUMNS).order('created_at', { ascending: false }).limit(6),
+    supabaseAdmin.from('content').select('type'),
   ]);
 
   const profile = profileResult.data;
   const adminRecord = adminResult.data;
   const membership = membershipResult.data;
-  const contents = contentsResult.data || [];
+  const contents = (contentsResult.data || []).map(toContentCard);
+  const typeRows: { type: string | null }[] = typesResult.data || [];
 
   const isAdmin = 
     adminRecord !== null || 
     profile?.role === 'admin' || 
-    ['santiago@gmail.com', 'adminlibredeansiedad@gmail.com', 'admin@serenamente.com'].includes(user.email || '');
+    isAdminEmail(user.email);
 
-  let hasActiveMembership = isAdmin;
+  const hasActiveMembership = isAdmin || isMembershipActive(membership);
 
-  if (!isAdmin && membership && membership.status === 'active') {
-    const isExpired = membership.current_period_end 
-      ? new Date(membership.current_period_end) < new Date() 
-      : false;
-    if (!isExpired) {
-      hasActiveMembership = true;
-    }
-  }
-
-  let displayName = profile?.full_name || user.email?.split('@')[0] || 'Miembro';
+  const displayName = profile?.full_name || user.email?.split('@')[0] || 'Miembro';
 
   // =========================================================================
   // SUB-CASO 2B: USUARIO LOGUEADO PERO SIN MEMBRESÍA ACTIVA
@@ -176,7 +174,7 @@ export default async function AulaDashboard() {
               href={epaycoPlanUrl}
               className="w-full sm:w-auto px-8 py-3.5 rounded-full bg-primary text-white font-bold text-sm hover:bg-primary/90 transition-all shadow-md"
             >
-              Activar Membresía ($30 USD/mes)
+              Activar Membresía ({MEMBERSHIP_PRICE_LABEL}/mes)
             </Link>
             <SignOutButton 
               type="member"
@@ -192,203 +190,104 @@ export default async function AulaDashboard() {
 
   // =========================================================================
   // SUB-CASO 2A: USUARIO AUTENTICADO CON MEMBRESÍA ACTIVA O ADMIN
-  // Renderiza el Aula Virtual Completa
+  // Solo datos reales: nombre, vigencia, contenido y conteo por formato.
   // =========================================================================
+  const firstName = displayName.split(' ')[0];
+  const periodEnd = membership?.current_period_end ? new Date(membership.current_period_end) : null;
+
+  const countBy = (types: string[]) =>
+    typeRows.filter((r) => types.includes((r.type || '').toLowerCase())).length;
+
+  const formats = [
+    { key: 'video', label: 'Videos', color: '#2b93d1', count: countBy(['video']) },
+    { key: 'audio', label: 'Audios guiados', color: '#12a04a', count: countBy(['audio']) },
+    { key: 'pdf', label: 'Guías PDF', color: '#eeab52', count: countBy(['pdf']) },
+    { key: 'article', label: 'Artículos', color: '#d6006f', count: countBy(['article', 'articulo']) },
+  ].filter((f) => f.count > 0);
+
   return (
-    <div className="flex flex-col gap-10 max-w-5xl mx-auto pb-16">
-      
-      {/* Welcome Banner - Premium Gradient con Glassmorphism */}
-      <div className="relative rounded-3xl overflow-hidden shadow-lg">
-         <div className="absolute inset-0 bg-gradient-to-br from-[#133a73] via-[#001531] to-[#12a04a]"></div>
-         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
-         <div className="absolute -top-24 -right-24 w-64 h-64 bg-white/20 blur-3xl rounded-full"></div>
-         
-         <div className="relative z-10 p-8 sm:p-10 flex flex-col sm:flex-row justify-between sm:items-center gap-8">
-            <div className="space-y-2 max-w-lg">
-               <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/20 backdrop-blur-md border border-white/20 text-white font-label-xs font-bold uppercase tracking-wider mb-1">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                  <span>{isAdmin ? 'Panel de Administrador' : 'Plan Premium Activo'}</span>
-               </div>
-               <h1 className="text-2xl sm:text-3xl lg:text-4xl text-white font-bold tracking-tight">
-                Hola, {displayName}
-               </h1>
-               <p className="text-white/90 text-sm sm:text-base leading-relaxed">
-                  Has mantenido una constancia increíble. Sigue invirtiendo en tu bienestar emocional, paso a paso.
-               </p>
-            </div>
-            
-            {/* Widget Circular de Progreso */}
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-5 flex items-center gap-4 border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.1)] shrink-0">
-               <div className="relative w-16 h-16 flex items-center justify-center">
-                  <svg className="w-full h-full transform -rotate-90 drop-shadow-md" viewBox="0 0 36 36">
-                     <path 
-                        className="text-white/20" 
-                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
-                        fill="none" 
-                        stroke="currentColor" 
-                        strokeWidth="3.5"
-                     />
-                     <path 
-                        className="text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.8)]" 
-                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
-                        fill="none" 
-                        stroke="currentColor" 
-                        strokeDasharray="75, 100" 
-                        strokeLinecap="round" 
-                        strokeWidth="3.5"
-                     />
-                  </svg>
-                  <span className="absolute text-sm text-white font-bold">75%</span>
-               </div>
-               <div className="flex flex-col">
-                  <span className="text-xs font-bold text-white uppercase tracking-wider">Meta Semanal</span>
-                  <span className="text-xs text-white/80">3/4 sesiones realizadas</span>
-               </div>
-            </div>
-         </div>
-      </div>
+    <div className="mx-auto flex max-w-5xl flex-col gap-14 pb-16">
+      {/* Bienvenida */}
+      <header className="border-b border-black/10 pb-10">
+        <BrandStripe className="mb-6" />
+        <h1 className="font-display text-4xl leading-tight tracking-[-0.01em] text-[#001531] sm:text-5xl">
+          Hola, {firstName}
+        </h1>
+        <p className="mt-4 text-neutral-600">
+          {isAdmin ? (
+            'Estás viendo el aula con permisos de administrador.'
+          ) : periodEnd ? (
+            <>
+              Tu membresía está activa hasta el{' '}
+              <strong className="font-semibold text-[#001531]">
+                {format(periodEnd, "d 'de' MMMM 'de' yyyy", { locale: es })}
+              </strong>
+              . Se renueva automáticamente con ePayco.
+            </>
+          ) : (
+            'Tu membresía está activa.'
+          )}{' '}
+          <Link href="/aula/perfil" className="font-semibold text-[#001531] underline underline-offset-4">
+            Ver mi perfil
+          </Link>
+        </p>
+      </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-         {/* Columna Principal: Contenido Reciente y Recomendaciones */}
-         <div className="lg:col-span-2 space-y-8">
-            
-            {/* Contenido Reciente */}
-            <section className="space-y-4">
-               <div className="flex justify-between items-center">
-                  <h2 className="text-lg sm:text-xl font-bold text-[#001531] flex items-center gap-2">
-                    <span className="material-symbols-outlined text-primary text-[22px]">play_circle</span>
-                    <span>Tus Lecciones y Actualizaciones</span>
-                  </h2>
-                  <Link href="/catalogo" className="text-xs font-bold text-primary hover:underline flex items-center gap-1">
-                    <span>Ver todo</span>
-                    <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
-                  </Link>
-               </div>
-               
-               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                 {contents.length > 0 ? contents.slice(0, 4).map(item => (
-                   <ContentCard key={item.id} item={item} />
-                 )) : (
-                   <div className="col-span-2 p-8 text-center text-neutral-500 bg-white rounded-3xl border border-black/5">
-                    No hay contenidos disponibles en este momento.
-                   </div>
-                 )}
-               </div>
-            </section>
+      {/* Explorar por formato (conteos reales) */}
+      {formats.length > 0 && (
+        <section>
+          <h2 className="mb-5 text-xs font-semibold uppercase tracking-[0.18em] text-neutral-500">Explorar por formato</h2>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {formats.map((f) => (
+              <Link
+                key={f.key}
+                href={`/catalogo?tipo=${f.key}`}
+                className="group rounded-2xl border border-black/10 bg-white p-5 transition-colors hover:border-[#001531]/40"
+              >
+                <span className="block h-2 w-2 rounded-full" style={{ backgroundColor: f.color }} />
+                <span className="mt-4 block font-display text-3xl text-[#001531]">{f.count}</span>
+                <span className="mt-1 block text-sm text-neutral-600 group-hover:text-[#001531]">{f.label}</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
-            {/* Recursos Recomendados */}
-            <section className="space-y-4">
-               <h2 className="text-lg font-bold text-[#001531]">Recomendado para tu tranquilidad</h2>
-               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Link href="/catalogo" className="bg-white border border-black/8 p-5 rounded-2xl shadow-sm hover:shadow-md transition-all group flex items-start gap-4">
-                     <div className="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center text-purple-700 shrink-0 group-hover:scale-105 transition-transform">
-                        <span className="material-symbols-outlined text-[24px]">headphones</span>
-                     </div>
-                     <div>
-                        <h4 className="font-bold text-sm text-neutral-900 group-hover:text-primary transition-colors">
-                          Meditación de Calma
-                        </h4>
-                        <p className="text-xs text-neutral-500 mt-1 line-clamp-2">
-                          Audio de 10 minutos para regular el sistema nervioso y disminuir la taquicardia.
-                        </p>
-                     </div>
-                  </Link>
+      {/* Contenido reciente */}
+      <section>
+        <div className="mb-8 flex items-end justify-between gap-4">
+          <h2 className="font-display text-3xl text-[#001531]">Agregado recientemente</h2>
+          <Link href="/catalogo" className="shrink-0 text-sm font-semibold text-[#001531] underline decoration-black/25 underline-offset-[6px] hover:decoration-[#001531]">
+            Ver todo →
+          </Link>
+        </div>
 
-                  <Link href="/catalogo" className="bg-white border border-black/8 p-5 rounded-2xl shadow-sm hover:shadow-md transition-all group flex items-start gap-4">
-                     <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-700 shrink-0 group-hover:scale-105 transition-transform">
-                        <span className="material-symbols-outlined text-[24px]">edit_note</span>
-                     </div>
-                     <div>
-                        <h4 className="font-bold text-sm text-neutral-900 group-hover:text-primary transition-colors">
-                          Registro Cognitivo
-                        </h4>
-                        <p className="text-xs text-neutral-500 mt-1 line-clamp-2">
-                          Guía clínica descargable para identificar y reestructurar pensamientos intrusivos.
-                        </p>
-                     </div>
-                  </Link>
-               </div>
-            </section>
-         </div>
+        {contents.length > 0 ? (
+          <div className="grid grid-cols-1 gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
+            {contents.map((item) => (
+              <ContentCard key={item.id} item={item} />
+            ))}
+          </div>
+        ) : (
+          <p className="rounded-2xl border border-black/10 bg-white p-8 text-center text-neutral-500">
+            Todavía no hay contenido publicado. Muy pronto encontrarás aquí las primeras lecciones.
+          </p>
+        )}
+      </section>
 
-         {/* Barra Lateral: Próximas Sesiones y Estadísticas */}
-         <div className="space-y-6">
-            
-            {/* Widget de Sesión en Vivo */}
-            <div className="bg-white border border-black/8 rounded-3xl p-6 shadow-sm relative overflow-hidden space-y-4">
-               <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse"></span>
-                  <span className="text-[11px] font-bold text-rose-600 uppercase tracking-wider">
-                    Sesión Mensual en Vivo
-                  </span>
-               </div>
-               
-               <h3 className="font-bold text-base text-[#001531] leading-snug">
-                Q&A Clínico: Gestión de Crisis de Pánico
-               </h3>
-               
-               <p className="text-xs text-neutral-600 leading-relaxed">
-                Sesión grupal exclusiva para miembros premium con el Psicólogo Nelson Arturo para responder dudas en vivo.
-               </p>
-               
-               <div className="bg-neutral-50 p-4 rounded-2xl flex items-center justify-between border border-black/5">
-                  <div>
-                     <p className="text-[11px] text-neutral-500 uppercase font-bold">Próximo Jueves</p>
-                     <p className="text-sm font-bold text-neutral-900">18:00 hrs (Col / Mex)</p>
-                  </div>
-                  <div className="w-10 h-10 rounded-full bg-white border border-black/10 flex items-center justify-center text-neutral-600 shadow-sm">
-                     <span className="material-symbols-outlined text-[20px]">calendar_today</span>
-                  </div>
-               </div>
-               
-               <Link 
-                href="/contacto"
-                className="w-full py-3 rounded-full bg-neutral-100 hover:bg-neutral-200 text-[#001531] font-bold text-xs flex items-center justify-center transition-colors"
-               >
-                  Enviar Pregunta para el En Vivo
-               </Link>
-            </div>
-
-            {/* Estadísticas de Constancia */}
-            <div className="bg-white border border-black/8 rounded-3xl p-6 shadow-sm space-y-4">
-               <h3 className="font-bold text-sm text-neutral-900">Tu Progreso</h3>
-               
-               <div className="space-y-3">
-                  <div className="flex justify-between items-center pb-3 border-b border-black/5">
-                     <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-full bg-orange-50 flex items-center justify-center text-orange-600">
-                           <span className="material-symbols-outlined text-[16px]">local_fire_department</span>
-                        </div>
-                        <span className="text-xs font-medium text-neutral-600">Días seguidos</span>
-                     </div>
-                     <span className="text-xs font-bold text-neutral-900">4 días</span>
-                  </div>
-
-                  <div className="flex justify-between items-center pb-3 border-b border-black/5">
-                     <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-[#133a73]">
-                           <span className="material-symbols-outlined text-[16px]">timer</span>
-                        </div>
-                        <span className="text-xs font-medium text-neutral-600">Minutos dedicados</span>
-                     </div>
-                     <span className="text-xs font-bold text-neutral-900">185 min</span>
-                  </div>
-
-                  <div className="flex justify-between items-center">
-                     <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600">
-                           <span className="material-symbols-outlined text-[16px]">task_alt</span>
-                        </div>
-                        <span className="text-xs font-medium text-neutral-600">Módulos explorados</span>
-                     </div>
-                     <span className="text-xs font-bold text-neutral-900">2 lecciones</span>
-                  </div>
-               </div>
-            </div>
-
-         </div>
-      </div>
-      
+      {/* Ayuda */}
+      <section className="flex flex-col justify-between gap-4 rounded-2xl bg-[#001531] p-7 text-white sm:flex-row sm:items-center">
+        <div>
+          <h2 className="font-display text-2xl">¿Necesitas ayuda?</h2>
+          <p className="mt-1 text-sm text-white/70">Si tienes problemas con tu acceso o una duda sobre el contenido, escríbenos.</p>
+        </div>
+        <Link
+          href="/contacto"
+          className="inline-flex h-11 shrink-0 items-center justify-center rounded-full bg-white px-6 text-sm font-semibold text-[#001531] hover:bg-[#f3efe6]"
+        >
+          Contactar soporte
+        </Link>
+      </section>
     </div>
   );
 }

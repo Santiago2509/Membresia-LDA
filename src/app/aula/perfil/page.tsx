@@ -3,6 +3,8 @@ import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import Link from 'next/link';
 import SignOutButton from '@/components/SignOutButton';
+import ChangePasswordForm from '@/components/ChangePasswordForm';
+import { EPAYCO_PLAN_URL, MEMBERSHIP_PRICE_LABEL } from '@/lib/membership';
 import { format, differenceInDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -70,7 +72,7 @@ export default async function PerfilPage() {
     ? format(periodStart, "d 'de' MMMM 'de' yyyy", { locale: es })
     : 'No registrado';
 
-  const epaycoPlanUrl = "https://subscription-landing.epayco.co/plan/a29e87ce7cb8b4eef061e42";
+  const epaycoPlanUrl = EPAYCO_PLAN_URL;
 
   return (
     <div className="max-w-3xl mx-auto space-y-8 pb-20">
@@ -184,7 +186,7 @@ export default async function PerfilPage() {
         {/* Información del plan */}
         <div className="p-4 rounded-2xl bg-neutral-50 border border-black/5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs text-neutral-600">
           <div>
-            <p className="font-bold text-neutral-800">Plan de Membresía Libre de Ansiedad ($30 USD/mes)</p>
+            <p className="font-bold text-neutral-800">Plan de Membresía Libre de Ansiedad ({MEMBERSHIP_PRICE_LABEL}/mes)</p>
             <p className="text-neutral-500 mt-0.5">
               Procesado de forma segura mediante ePayco Suscripciones.
             </p>
@@ -201,7 +203,10 @@ export default async function PerfilPage() {
         </div>
       </div>
 
-      {/* Tarjeta 3: Acciones y Cierre de Sesión */}
+      {/* Tarjeta 3: Cambio de contraseña */}
+      <ChangePasswordForm />
+
+      {/* Tarjeta 4: Acciones y Cierre de Sesión */}
       <div className="bg-white rounded-3xl p-6 sm:p-8 border border-black/10 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
         <div>
           <h4 className="font-bold text-neutral-900 text-sm">¿Deseas cerrar tu sesión?</h4>

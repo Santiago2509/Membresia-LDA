@@ -10,8 +10,14 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
 });
 
 async function main() {
-  const email = 'santiago@gmail.com';
-  const password = '123456';
+  // Uso: npx tsx scratch/create_admin.ts correo@dominio.com "ContraseñaSegura123"
+  const email = (process.argv[2] || '').trim().toLowerCase();
+  const password = process.argv[3] || '';
+
+  if (!email || password.length < 10) {
+    console.error('Uso: npx tsx scratch/create_admin.ts <correo> <contraseña de mínimo 10 caracteres>');
+    process.exit(1);
+  }
 
   console.log('Creando usuario admin:', email);
 
@@ -24,7 +30,7 @@ async function main() {
       email,
       password,
       email_confirm: true,
-      user_metadata: { full_name: 'Santiago Admin' },
+      user_metadata: { full_name: 'Administrador' },
     });
 
     if (createError) {
@@ -52,7 +58,7 @@ async function main() {
     .upsert({
       id: user.id,
       email: email,
-      full_name: 'Santiago Admin',
+      full_name: 'Administrador',
       role: 'admin',
       updated_at: new Date().toISOString(),
     });
@@ -69,7 +75,7 @@ async function main() {
     .upsert({
       id: user.id,
       email: email,
-      full_name: 'Santiago Admin',
+      full_name: 'Administrador',
     });
 
   if (adminError) {
@@ -78,7 +84,7 @@ async function main() {
     console.log('Admin registrado en public.admins');
   }
 
-  console.log('¡Listo! Administrador santiago@gmail.com configurado al 100%.');
+  console.log(`¡Listo! Administrador ${email} configurado.`);
 }
 
 main().catch(console.error);

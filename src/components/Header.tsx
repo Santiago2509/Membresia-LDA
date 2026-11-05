@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { createSupabaseBrowserClient } from '@/lib/supabase';
 import SignOutButton from '@/components/SignOutButton';
+import { EPAYCO_PLAN_URL } from '@/lib/membership';
 
 export function Header() {
   const pathname = usePathname();
@@ -14,7 +15,7 @@ export function Header() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const epaycoPlanUrl = "https://subscription-landing.epayco.co/plan/a29e87ce7cb8b4eef061e42";
+  const epaycoPlanUrl = EPAYCO_PLAN_URL;
 
   useEffect(() => {
     // Detectar sesión activa en Supabase
