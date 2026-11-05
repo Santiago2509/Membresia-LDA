@@ -93,7 +93,7 @@ export async function sendWelcomeSubscriberEmail({
                     </tr>
                   </table>
                   <p style="margin: 14px 0 0 0; font-size: 12px; color: #718096;">
-                    *Te recomendamos cambiar tu contraseña por una de tu preferencia una vez inicies sesión.
+                    *Puedes cambiar esta contraseña cuando quieras desde <strong>Mi Perfil</strong> dentro del Aula Virtual.
                   </p>
                 </div>
                 `
@@ -102,6 +102,9 @@ export async function sendWelcomeSubscriberEmail({
                 <div style="background-color: #f7fafc; border: 1px solid #edf2f7; border-left: 4px solid #319795; border-radius: 8px; padding: 18px; margin: 24px 0;">
                   <p style="margin: 0; font-size: 14px; color: #2d3748;">
                     Como ya contabas con una cuenta en la plataforma, todo el contenido premium ya ha sido desbloqueado. Puedes ingresar con tu correo <strong>${to}</strong> y tu contraseña de siempre.
+                  </p>
+                  <p style="margin: 10px 0 0 0; font-size: 13px; color: #4a5568;">
+                    ¿No la recuerdas? Entra a <a href="${loginUrl}" style="color: #0e4b52; font-weight: 600;">${loginUrl}</a> y usa la opción <strong>"¿Olvidaste tu contraseña?"</strong> para crear una nueva.
                   </p>
                 </div>
                 `
@@ -149,7 +152,9 @@ export async function sendWelcomeSubscriberEmail({
     const info = await transporter.sendMail({
       from: emailFrom,
       to,
-      subject: '🌿 ¡Bienvenido(a) a Libre de Ansiedad! Tus credenciales de acceso',
+      subject: isNewUser && password
+        ? '🌿 ¡Bienvenido(a) a Libre de Ansiedad! Tus credenciales de acceso'
+        : '🌿 Tu membresía de Libre de Ansiedad está activa',
       html: htmlContent,
     });
 

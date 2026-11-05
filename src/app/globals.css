@@ -135,6 +135,11 @@
   --text-display-lg--font-weight: 700;
 }
 
+/* Tipografía editorial para títulos (Fraunces, cargada con next/font en layout.tsx) */
+@theme inline {
+  --font-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
+}
+
 @layer base {
   html, body {
     margin: 0;

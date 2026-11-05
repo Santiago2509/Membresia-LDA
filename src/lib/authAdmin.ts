@@ -3,11 +3,9 @@ import { NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { supabaseAdmin } from './supabaseAdmin';
 
-export const ADMIN_EMAILS = [
-  'santiago@gmail.com',
-  'adminlibredeansiedad@gmail.com',
-  'admin@serenamente.com',
-];
+import { isAdminEmail } from './membership';
+
+export { ADMIN_EMAILS } from './membership';
 
 export async function verifyAdmin(req?: NextRequest) {
   let user: any = null;
@@ -54,7 +52,7 @@ export async function verifyAdmin(req?: NextRequest) {
   const email = (user.email || '').toLowerCase().trim();
 
   // 1. Comprobación directa por lista de correos administradores
-  if (email && ADMIN_EMAILS.includes(email)) {
+  if (isAdminEmail(email)) {
     return { user, profile: { role: 'admin', email } };
   }
 

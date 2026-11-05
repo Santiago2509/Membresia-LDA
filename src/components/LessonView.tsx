@@ -6,6 +6,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { getEmbedUrl } from '@/lib/videoUtils';
 import { createSupabaseBrowserClient } from '@/lib/supabase';
+import { EPAYCO_PLAN_URL } from '@/lib/membership';
 
 interface LessonViewProps {
   contentId: string;
@@ -26,7 +27,7 @@ export default function LessonView({
   const [isCheckingClient, setIsCheckingClient] = useState(!initialHasAccess);
   const [isExpired, setIsExpired] = useState(false);
 
-  const epaycoPlanUrl = "https://subscription-landing.epayco.co/plan/a29e87ce7cb8b4eef061e42";
+  const epaycoPlanUrl = EPAYCO_PLAN_URL;
 
   // Función para validar acceso con la sesión activa
   const checkSessionAccess = useCallback(async (session: any, isMounted: () => boolean) => {

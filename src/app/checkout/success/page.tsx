@@ -15,7 +15,7 @@ export default function CheckoutSuccessPage() {
 
         <h1 className="font-headline-md text-primary font-bold mb-4">¡Pago Exitoso!</h1>
         <p className="font-body-md text-on-surface-variant mb-6">
-          Tu membresía Premium se está activando. 
+          Tu membresía se está activando. Puede tardar unos minutos mientras ePayco nos confirma el pago.
         </p>
 
         <div className="bg-surface-container-low p-6 rounded-2xl mb-8 space-y-4 text-left">
@@ -23,7 +23,7 @@ export default function CheckoutSuccessPage() {
             <span className="material-symbols-outlined text-secondary shrink-0 mt-0.5">mark_email_unread</span>
             <p className="font-label-sm text-on-surface">
               <strong className="block text-primary">Revisa tu correo electrónico</strong>
-              Te hemos enviado un enlace para que configures tu contraseña y accedas de inmediato si eres nuevo en la plataforma.
+              Si eres nuevo, en unos minutos te llegará un correo con tu usuario y tu contraseña temporal. Revisa también la carpeta de spam o promociones.
             </p>
           </div>
           <div className="flex gap-3">

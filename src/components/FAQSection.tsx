@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
+import { BrandStripe } from './BrandStripe';
 
 interface FAQItem {
   question: string;
@@ -9,88 +11,77 @@ interface FAQItem {
 
 const faqs: FAQItem[] = [
   {
-    question: '¿Cómo accedo a los contenidos una vez realizada la compra?',
-    answer: 'Tan pronto confirmas tu membresía en ePayco, nuestro sistema te envía un correo electrónico de bienvenida con tu usuario y tu contraseña temporal para que ingreses de inmediato a tu Aula Virtual. Todo el proceso es 100% automático e instantáneo.',
+    question: '¿Cómo accedo a los contenidos después de pagar?',
+    answer: 'Cuando ePayco confirma tu pago, el sistema crea tu cuenta y te envía un correo con tu usuario y una contraseña temporal. Con esos datos entras al Aula Virtual. Todo es automático.',
   },
   {
-    question: '¿Puedo cancelar la membresía en cualquier momento?',
-    answer: 'Sí, totalmente. No tenemos cláusulas de permanencia ni cobros ocultos. Puedes cancelar tu suscripción mensual cuando lo desees y mantendrás acceso completo hasta que finalice el periodo que ya pagaste.',
+    question: 'No me llegó el correo, ¿qué hago?',
+    answer: 'Revisa las carpetas de spam y promociones. Si no aparece, entra a "Iniciar sesión", elige "¿Olvidaste tu contraseña?" y escribe el mismo correo con el que pagaste: te llegará un enlace para crear tu contraseña.',
   },
   {
-    question: '¿Qué tipo de contenidos encontraré en la plataforma?',
-    answer: 'Tendrás acceso ilimitado a cursos completos en video impartidos por el Psic. Nelson Arturo, audios terapéuticos guiados para emergencias de ansiedad, cuadernos de trabajo clínicos descargables en PDF y sesiones de actualización constantes.',
+    question: '¿Puedo cambiar la contraseña que me enviaron?',
+    answer: 'Sí. Dentro del aula ve a "Mi Perfil & Suscripción" y usa la opción "Cambiar contraseña".',
   },
   {
-    question: '¿Es necesario tener conocimientos previos en psicología?',
-    answer: 'Para nada. Cada clase y recurso está diseñado con un lenguaje claro, cercano y práctico, pensando en personas comunes que buscan herramientas científicas reales para aplicar en su vida diaria.',
+    question: '¿Puedo cancelar en cualquier momento?',
+    answer: 'Sí. No hay permanencia ni cobros ocultos. Si cancelas, conservas el acceso hasta que termine el periodo que ya pagaste.',
   },
   {
-    question: '¿Desde qué países puedo adquirir la membresía?',
-    answer: 'Nuestra pasarela ePayco acepta pagos con tarjetas de crédito y débito internacionales desde cualquier país del mundo. El cobro se realiza de forma segura en dólares (USD).',
+    question: '¿Necesito conocimientos de psicología?',
+    answer: 'No. Cada recurso está explicado con un lenguaje claro y práctico, pensado para cualquier persona que quiera herramientas para su día a día.',
+  },
+  {
+    question: '¿Desde qué países puedo suscribirme?',
+    answer: 'Desde cualquier país. ePayco acepta tarjetas de crédito y débito internacionales y el cobro se hace en dólares (USD).',
   },
 ];
 
 export function FAQSection() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
-  const toggleFAQ = (index: number) => {
-    setOpenIndex(openIndex === index ? null : index);
-  };
-
   return (
-    <section className="py-16 lg:py-24 border-b border-black/5">
-      <div className="max-w-[960px] mx-auto px-6 lg:px-12">
-        
-        {/* Encabezado de la sección */}
-        <div className="text-center max-w-2xl mx-auto mb-12 space-y-3">
-          <div className="inline-flex items-center gap-2 rounded-full bg-white/80 border border-black/5 px-4 py-1 shadow-sm backdrop-blur-md">
-            <span className="material-symbols-outlined text-[#133a73] text-[18px]">help_outline</span>
-            <span className="font-label-sm text-xs font-bold text-neutral-700 tracking-wider uppercase">
-              Resolvemos tus dudas
-            </span>
-          </div>
-          <h2 className="font-headline-lg text-2xl sm:text-3xl lg:text-4xl text-[#001531] font-bold tracking-tight">
-            Preguntas Frecuentes
+    <section className="border-b border-black/10">
+      <div className="mx-auto grid max-w-[1200px] grid-cols-1 gap-12 px-5 py-20 sm:px-8 lg:grid-cols-12 lg:px-12 lg:py-28">
+        <div className="lg:col-span-4">
+          <BrandStripe className="mb-6" />
+          <h2 className="font-display text-4xl leading-tight tracking-[-0.01em] text-[#001531] sm:text-5xl">
+            Preguntas frecuentes
           </h2>
-          <p className="font-body-md text-sm sm:text-base text-neutral-600">
-            Todo lo que necesitas saber sobre el funcionamiento de tu membresía y el acceso al Aula Virtual.
+          <p className="mt-5 max-w-sm leading-relaxed text-neutral-600">
+            ¿Tienes otra duda?{' '}
+            <Link href="/contacto" className="font-semibold text-[#001531] underline underline-offset-4">
+              Escríbenos
+            </Link>
+            .
           </p>
         </div>
 
-        {/* Acordeón de Preguntas */}
-        <div className="space-y-3.5">
+        <div className="divide-y divide-black/10 border-y border-black/10 lg:col-span-7 lg:col-start-6">
           {faqs.map((faq, index) => {
             const isOpen = openIndex === index;
             return (
-              <div 
-                key={index}
-                className="bg-white rounded-2xl border border-black/10 overflow-hidden shadow-sm transition-all duration-200"
-              >
+              <div key={faq.question}>
                 <button
                   type="button"
-                  onClick={() => toggleFAQ(index)}
-                  className="w-full py-4.5 px-6 flex items-center justify-between gap-4 text-left font-title-md text-sm sm:text-base font-bold text-[#001531] hover:text-[#133a73] transition-colors cursor-pointer"
+                  aria-expanded={isOpen}
+                  onClick={() => setOpenIndex(isOpen ? null : index)}
+                  className="flex w-full cursor-pointer items-start justify-between gap-6 py-6 text-left"
                 >
-                  <span>{faq.question}</span>
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-transform duration-200 ${
-                    isOpen ? 'bg-[#133a73] text-white rotate-180' : 'bg-black/5 text-neutral-600'
-                  }`}>
-                    <span className="material-symbols-outlined text-[20px]">
-                      keyboard_arrow_down
-                    </span>
-                  </div>
+                  <span className="text-lg font-semibold text-[#001531]">{faq.question}</span>
+                  <span
+                    aria-hidden="true"
+                    className={`mt-1 font-display text-2xl leading-none text-[#133a73] transition-transform duration-200 ${isOpen ? 'rotate-45' : ''}`}
+                  >
+                    +
+                  </span>
                 </button>
-
                 {isOpen && (
-                  <div className="px-6 pb-5 pt-1 text-neutral-600 text-sm leading-relaxed border-t border-black/5 animate-fade-in">
-                    {faq.answer}
-                  </div>
+                  <p className="max-w-2xl pb-7 pr-10 leading-relaxed text-neutral-600">{faq.answer}</p>
                 )}
               </div>
             );
           })}
         </div>
-
       </div>
     </section>
   );

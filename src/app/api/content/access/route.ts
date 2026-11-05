@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { isAdminEmail, isMembershipActive } from '@/lib/membership';
 
 export const dynamic = 'force-dynamic';
 
@@ -86,7 +87,7 @@ export async function POST(request: NextRequest) {
     const isAdmin =
       adminRecordRes.data !== null ||
       profileRes.data?.role === 'admin' ||
-      ['santiago@gmail.com', 'adminlibredeansiedad@gmail.com', 'admin@serenamente.com'].includes(user.email || '');
+      isAdminEmail(user.email);
 
     if (isAdmin) {
       return NextResponse.json({
@@ -104,18 +105,12 @@ export async function POST(request: NextRequest) {
       .eq('user_id', user.id)
       .maybeSingle();
 
-    if (membership && membership.status === 'active') {
-      const isExpired = membership.current_period_end
-        ? new Date(membership.current_period_end) < new Date()
-        : false;
-
-      if (!isExpired) {
-        return NextResponse.json({
-          authorized: true,
-          content,
-          user: { id: user.id, email: user.email },
-        });
-      }
+    if (isMembershipActive(membership)) {
+      return NextResponse.json({
+        authorized: true,
+        content,
+        user: { id: user.id, email: user.email },
+      });
     }
 
     // Usuario autenticado pero sin suscripción activa o vencida

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { createSupabaseBrowserClient } from '@/lib/supabase';
+import { EPAYCO_PLAN_URL } from '@/lib/membership';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -17,7 +18,7 @@ export default function LoginPage() {
   const [resetLoading, setResetLoading] = useState(false);
   const [resetError, setResetError] = useState<string | null>(null);
 
-  const epaycoPlanUrl = "https://subscription-landing.epayco.co/plan/a29e87ce7cb8b4eef061e42";
+  const epaycoPlanUrl = EPAYCO_PLAN_URL;
 
   // Login con Correo + Contraseña
   const handleLogin = async (e: React.FormEvent) => {
@@ -73,7 +74,7 @@ export default function LoginPage() {
     try {
       const supabase = createSupabaseBrowserClient();
       const { error: resetErr } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
-        redirectTo: `${window.location.origin}/login`,
+        redirectTo: `${window.location.origin}/restablecer`,
       });
 
       if (resetErr) {
