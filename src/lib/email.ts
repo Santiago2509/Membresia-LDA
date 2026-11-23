@@ -165,3 +165,82 @@ export async function sendWelcomeSubscriberEmail({
     return { success: false, error: error.message };
   }
 }
+
+// =============================================================================
+// Correo de recuperación de contraseña (lo envía la plataforma, no Supabase)
+// =============================================================================
+
+interface SendPasswordResetEmailParams {
+  to: string;
+  name?: string | null;
+  link: string;
+}
+
+function escapeHtml(text: string) {
+  return text.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string);
+}
+
+export async function sendPasswordResetEmail({ to, name, link }: SendPasswordResetEmailParams) {
+  const smtpUser = process.env.SMTP_USER;
+  const smtpPass = process.env.SMTP_PASS;
+  const emailFrom = process.env.EMAIL_FROM || `"Libre de Ansiedad" <${smtpUser}>`;
+
+  if (!smtpUser || !smtpPass) {
+    console.warn('⚠️ SMTP_USER o SMTP_PASS no están configurados. No se pudo enviar el correo de recuperación.');
+    return { success: false, error: 'Credenciales SMTP faltantes' };
+  }
+
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: { user: smtpUser, pass: smtpPass },
+  });
+
+  const displayName = name && name.trim() !== '' ? escapeHtml(name.trim()) : '';
+  const greeting = displayName ? `Hola, ${displayName}:` : 'Hola:';
+
+  const html = `
+  <!DOCTYPE html>
+  <html lang="es">
+  <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Restablece tu contraseña</title></head>
+  <body style="margin:0;padding:0;background-color:#f7f5f0;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;color:#0b1f3a;line-height:1.6;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f7f5f0;padding:40px 15px;">
+      <tr><td align="center">
+        <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background-color:#ffffff;border-radius:20px;overflow:hidden;border:1px solid #e7e3da;">
+          <tr><td style="height:6px;background:linear-gradient(90deg,#12a04a,#8dc42a,#eeab52,#ec6f31,#e8363b,#d6006f,#b0106a,#2b93d1,#133a73);"></td></tr>
+          <tr><td style="padding:36px 32px 8px 32px;">
+            <p style="margin:0 0 6px 0;font-size:14px;font-weight:600;color:#12a04a;letter-spacing:1px;text-transform:uppercase;">Libre de Ansiedad</p>
+            <h1 style="margin:0 0 20px 0;font-size:26px;line-height:1.25;color:#0b1f3a;">Crea una nueva contraseña</h1>
+            <p style="margin:0 0 14px 0;font-size:17px;color:#3f4a5a;">${greeting}</p>
+            <p style="margin:0 0 26px 0;font-size:17px;color:#3f4a5a;">Recibimos una solicitud para cambiar la contraseña de tu cuenta. Toca el botón para elegir una nueva. Puedes abrirlo desde el celular o el computador.</p>
+          </td></tr>
+          <tr><td align="center" style="padding:0 32px 28px 32px;">
+            <a href="${link}" target="_blank" style="display:inline-block;background-color:#0b1f3a;color:#ffffff;text-decoration:none;font-size:18px;font-weight:600;padding:16px 34px;border-radius:999px;">Crear mi nueva contraseña</a>
+          </td></tr>
+          <tr><td style="padding:0 32px 32px 32px;">
+            <p style="margin:0 0 10px 0;font-size:14px;color:#3f4a5a;">Este enlace funciona una sola vez y vence en poco tiempo. Si vence, pide uno nuevo desde la pantalla de inicio de sesión.</p>
+            <p style="margin:0;font-size:14px;color:#3f4a5a;">Si no pediste este cambio, ignora este correo: tu contraseña sigue igual.</p>
+          </td></tr>
+          <tr><td style="background-color:#f7f5f0;padding:18px 32px;font-size:12px;color:#6b7280;text-align:center;">
+            © ${new Date().getFullYear()} Libre de Ansiedad · Centro de Psicología Especializado en Ansiedad
+          </td></tr>
+        </table>
+      </td></tr>
+    </table>
+  </body>
+  </html>`;
+
+  try {
+    const info = await transporter.sendMail({
+      from: emailFrom,
+      to,
+      subject: 'Restablece tu contraseña – Libre de Ansiedad',
+      html,
+      text: `${greeting}\n\nPara crear una nueva contraseña abre este enlace:\n${link}\n\nSi no pediste este cambio, ignora este correo.`,
+    });
+    console.log(`✉️ Correo de recuperación enviado a ${to}. ID: ${info.messageId}`);
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error(`❌ Error enviando correo de recuperación a ${to}:`, error);
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
+  }
+}
