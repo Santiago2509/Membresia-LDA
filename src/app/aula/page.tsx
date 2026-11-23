@@ -8,6 +8,7 @@ import SignOutButton from '@/components/SignOutButton';
 import { BrandStripe } from '@/components/BrandStripe';
 import { Icon } from '@/components/ui/Icon';
 import { BreathingExercise } from '@/components/BreathingExercise';
+import { MembershipRenewal } from '@/components/MembershipRenewal';
 import { CONTENT_CARD_COLUMNS, EPAYCO_PLAN_URL, MEMBERSHIP_PRICE_LABEL, isAdminEmail, isMembershipActive } from '@/lib/membership';
 import { toContentCard } from '@/lib/contentCards';
 import { format } from 'date-fns';
@@ -108,36 +109,22 @@ export default async function AulaDashboard() {
   // =========================================================================
   if (!hasActiveMembership) {
     return (
-      <div className="mx-auto max-w-2xl py-8 sm:py-16">
-        <div className="space-y-7 rounded-[2rem] bg-white p-8 text-center shadow-[0_10px_40px_rgba(11,31,58,0.06)] sm:p-12">
-          <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-sun/20 text-[#b9771f]">
-            <Icon name="calendar" className="h-8 w-8" />
-          </span>
-          <div className="space-y-3">
-            <h1 className="font-display text-4xl text-ink">Hola, {displayName}</h1>
-            <p className="mx-auto max-w-md text-lg leading-relaxed text-body">
-              Tu cuenta está creada, pero tu membresía no está activa en este momento. Actívala para volver a ver todas
-              las lecciones.
-            </p>
-            <p className="text-base text-body">
-              ¿Ya pagaste? A veces la confirmación de ePayco tarda unos minutos. Si pasa más tiempo,{' '}
-              <Link href="/contacto" className="font-semibold text-ink underline underline-offset-4">escríbenos</Link>.
-            </p>
-          </div>
-          <div className="mx-auto grid max-w-md gap-3">
-            <Link
-              href={epaycoPlanUrl}
-              className="inline-flex h-14 items-center justify-center rounded-full bg-ink px-7 text-lg font-semibold text-white transition-colors hover:bg-brand"
-            >
-              Activar membresía ({MEMBERSHIP_PRICE_LABEL}/mes)
-            </Link>
-            <SignOutButton
-              type="member"
-              className="inline-flex h-14 cursor-pointer items-center justify-center rounded-full border-2 border-ink/15 px-7 text-lg font-semibold text-ink transition-colors hover:border-ink"
-            >
-              Cerrar sesión
-            </SignOutButton>
-          </div>
+      <div className="mx-auto max-w-2xl py-6 sm:py-12">
+        <p className="mb-4 text-lg text-body">Hola, {displayName}</p>
+        <div className="rounded-[2rem] bg-white p-7 shadow-[0_10px_40px_rgba(11,31,58,0.06)] sm:p-10">
+          <MembershipRenewal
+            status={membership?.status}
+            email={user.email || ''}
+            periodEnd={membership?.current_period_end}
+          />
+        </div>
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 text-base text-body">
+          <Link href="/aula/perfil" className="font-semibold text-ink underline underline-offset-4">
+            Ver mi perfil
+          </Link>
+          <SignOutButton type="member" className="cursor-pointer font-semibold text-body underline underline-offset-4">
+            Cerrar sesión
+          </SignOutButton>
         </div>
       </div>
     );

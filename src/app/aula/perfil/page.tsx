@@ -5,7 +5,8 @@ import Link from 'next/link';
 import SignOutButton from '@/components/SignOutButton';
 import ChangePasswordForm from '@/components/ChangePasswordForm';
 import { Icon } from '@/components/ui/Icon';
-import { EPAYCO_PLAN_URL, MEMBERSHIP_PRICE_LABEL } from '@/lib/membership';
+import { MembershipRenewal } from '@/components/MembershipRenewal';
+import { MEMBERSHIP_PRICE_LABEL } from '@/lib/membership';
 import { format, differenceInDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -71,7 +72,6 @@ export default async function PerfilPage() {
     ? format(periodStart, "d 'de' MMMM 'de' yyyy", { locale: es })
     : 'No registrado';
 
-  const epaycoPlanUrl = EPAYCO_PLAN_URL;
 
   const active = isActive && !isExpired;
 
@@ -129,12 +129,14 @@ export default async function PerfilPage() {
         </p>
 
         {!active && (
-          <Link
-            href={epaycoPlanUrl}
-            className="inline-flex h-14 w-full items-center justify-center rounded-full bg-ink px-8 text-lg font-semibold text-white hover:bg-brand sm:w-auto"
-          >
-            Renovar membresía
-          </Link>
+          <div className="border-t border-ink/10 pt-6">
+            <MembershipRenewal
+              compact
+              status={membership?.status}
+              email={email}
+              periodEnd={membership?.current_period_end}
+            />
+          </div>
         )}
       </section>
 
