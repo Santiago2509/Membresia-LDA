@@ -114,6 +114,20 @@ async function validateEpaycoEvent(
   }
 }
 
+/**
+ * Corrige texto UTF-8 que llegó interpretado como Latin-1 (p. ej. "sesiÃ³n" -> "sesión").
+ * Solo actúa si detecta el patrón típico y la reparación es válida; si no, deja el texto igual.
+ */
+function repairMojibake(value: string): string {
+  if (!/[ÃÂ][\u0080-\u00BF]/.test(value)) return value;
+  try {
+    const repaired = Buffer.from(value, 'latin1').toString('utf8');
+    return repaired.includes('\uFFFD') ? value : repaired;
+  } catch {
+    return value;
+  }
+}
+
 function errorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
@@ -159,6 +173,11 @@ export async function POST(req: NextRequest) {
       req.nextUrl.searchParams.forEach((value, key) => {
         data[key] = value;
       });
+    }
+
+    // Reparar tildes dañadas ("sesiÃ³n" -> "sesión") que a veces llegan en los avisos
+    for (const key of Object.keys(data)) {
+      data[key] = repairMojibake(data[key]);
     }
 
     const p_cust_id = process.env.EPAYCO_P_CUST_ID;
@@ -229,20 +248,22 @@ export async function POST(req: NextRequest) {
     // La cuenta de ePayco se usa también para otros cobros (sesiones, consultas,
     // links de pago), así que solo se procesan los de la membresía.
     // -------------------------------------------------------------------------
+    // Datos reales observados (webhook_events):
+    //  - Membresía: x_extra3 = ID del plan, descripción "Adquiere acceso a contenido premium".
+    //  - Sesiones/consultas: vienen de links de pago (x_extra9_epayco = "payco_link:...") sin x_extra3.
     const expectedPlanId = process.env.EPAYCO_PLAN_ID || 'a29e87ce7cb8b4eef061e42';
     const planId = data.x_extra3 || data.x_id_plan || data.x_plan || data.id_plan || '';
     const description = (data.x_description || data.description || '').toLowerCase();
-    const currency = (data.x_currency_code || data.currency || '').toUpperCase();
-    const amount = parseFloat(data.x_amount || data.amount || '0');
     const extra9 = (data.x_extra9_epayco || '').toLowerCase();
+    const isPaymentLink = extra9.startsWith('payco_link');
 
     const isMembershipTransaction =
-      planId === expectedPlanId ||
-      description.includes('adquiere acceso a contenido premium') ||
-      description.includes('libre de ansiedad') ||
-      description.includes('membresia') ||
-      description.includes('membresía') ||
-      (currency === 'USD' && amount <= 30 && !extra9.startsWith('payco_link'));
+      !isPaymentLink &&
+      (planId === expectedPlanId ||
+        // Respaldo por si una renovación llega sin x_extra3: descripción del plan o la palabra "membresía"
+        description.includes('adquiere acceso a contenido premium') ||
+        description.includes('membresia') ||
+        description.includes('membresía'));
 
     if (!isMembershipTransaction) {
       console.log(`[ePayco] Transacción omitida (Ref: ${x_ref_payco}): corresponde a otro servicio ("${data.x_description || 'Sin descripción'}").`);
