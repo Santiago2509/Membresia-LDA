@@ -73,18 +73,21 @@ export default function LoginPage() {
     setResetError(null);
 
     try {
-      const supabase = createSupabaseBrowserClient();
-      const { error: resetErr } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
-        redirectTo: `${window.location.origin}/restablecer`,
+      // La plataforma envía su propio correo con un enlace que funciona en cualquier navegador
+      const res = await fetch('/api/auth/recover', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim().toLowerCase() }),
       });
+      const json = await res.json().catch(() => ({}));
 
-      if (resetErr) {
-        setResetError('No pudimos enviar el enlace de recuperación. Verifica tu correo.');
+      if (!res.ok) {
+        setResetError(json?.error || 'No pudimos enviar el enlace. Inténtalo de nuevo en unos minutos.');
       } else {
         setResetSent(true);
       }
     } catch {
-      setResetError('Error al solicitar recuperación.');
+      setResetError('No pudimos conectar. Revisa tu internet e inténtalo de nuevo.');
     } finally {
       setResetLoading(false);
     }
@@ -229,8 +232,9 @@ export default function LoginPage() {
               </span>
               <h2 className="font-display text-3xl text-ink">Revisa tu correo</h2>
               <p className="text-lg text-body">
-                Te enviamos un enlace a <strong className="text-ink">{email}</strong>. Ábrelo para crear tu nueva
-                contraseña. Si no aparece, mira en spam o promociones.
+                Si <strong className="text-ink">{email}</strong> está registrado, en unos minutos te llegará un enlace
+                para crear tu nueva contraseña. Puedes abrirlo desde el celular o el computador. Si no aparece, mira en
+                spam o promociones.
               </p>
               <button
                 type="button"
