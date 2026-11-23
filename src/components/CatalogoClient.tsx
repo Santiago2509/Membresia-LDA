@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import ContentCard, { ContentCardItem } from '@/components/ContentCard';
+import { Icon, type IconName } from '@/components/ui/Icon';
 
 interface CatalogoClientProps {
   initialContents: ContentCardItem[];
@@ -29,12 +30,12 @@ export default function CatalogoClient({ initialContents, initialType }: Catalog
   }, [initialContents]);
 
   // Types list with friendly labels and icons
-  const typeOptions = [
-    { key: 'all', label: 'Todo', icon: 'grid_view' },
-    { key: 'video', label: 'Videos', icon: 'play_circle' },
-    { key: 'audio', label: 'Audios guiados', icon: 'headphones' },
-    { key: 'article', label: 'Artículos', icon: 'menu_book' },
-    { key: 'pdf', label: 'Guías PDF', icon: 'description' },
+  const typeOptions: { key: string; label: string; icon: IconName }[] = [
+    { key: 'all', label: 'Todo', icon: 'grid' },
+    { key: 'video', label: 'Videos', icon: 'play' },
+    { key: 'audio', label: 'Audios', icon: 'headphones' },
+    { key: 'pdf', label: 'Guías PDF', icon: 'file' },
+    { key: 'article', label: 'Artículos', icon: 'book' },
   ];
 
   // Filter content
@@ -79,132 +80,128 @@ export default function CatalogoClient({ initialContents, initialType }: Catalog
     setSelectedCategory('all');
   };
 
+  const hasFilters = searchTerm !== '' || selectedType !== 'all' || selectedCategory !== 'all';
+
   return (
     <div className="space-y-10">
-      {/* Search & Filter Toolbar */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-black/10 space-y-6">
-        
-        {/* Search Bar */}
-        <div className="relative w-full">
-          <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 text-[22px]">
-            search
-          </span>
+      <div className="space-y-6 rounded-[2rem] bg-white p-5 shadow-[0_10px_40px_rgba(11,31,58,0.06)] sm:p-8">
+        {/* Buscador */}
+        <label className="relative block">
+          <span className="sr-only">Buscar en el catálogo</span>
+          <Icon name="search" className="pointer-events-none absolute left-5 top-1/2 h-6 w-6 -translate-y-1/2 text-body" />
           <input
-            type="text"
+            type="search"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Buscar por tema, palabra clave (ej. crisis, respiración, pensamientos)..."
-            className="w-full pl-12 pr-10 py-3.5 bg-neutral-100/80 hover:bg-neutral-100 focus:bg-white rounded-2xl border border-transparent focus:border-[#133a73] text-sm text-neutral-900 placeholder-neutral-500 focus:outline-none transition-all shadow-inner"
+            placeholder="Buscar: crisis, respiración, pensamientos…"
+            className="h-16 w-full rounded-2xl border-2 border-ink/10 bg-paper pl-14 pr-14 text-lg text-ink placeholder:text-body/70 focus:border-brand focus:bg-white focus:outline-none"
           />
           {searchTerm && (
             <button
+              type="button"
               onClick={() => setSearchTerm('')}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700"
-              title="Borrar búsqueda"
+              aria-label="Borrar búsqueda"
+              className="absolute right-4 top-1/2 flex h-9 w-9 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full text-body hover:bg-ink/5"
             >
-              <span className="material-symbols-outlined text-[18px]">close</span>
+              <Icon name="close" className="h-5 w-5" />
             </button>
           )}
-        </div>
+        </label>
 
-        {/* Format Pills */}
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider mr-2 hidden sm:inline">
-            Formato:
-          </span>
-          {typeOptions.map((opt) => {
-            const isActive = selectedType === opt.key;
-            return (
-              <button
-                key={opt.key}
-                onClick={() => setSelectedType(opt.key)}
-                className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition-all ${
-                  isActive
-                    ? 'bg-[#001531] text-white shadow-md'
-                    : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200/70 hover:text-neutral-900'
-                }`}
-              >
-                <span className="material-symbols-outlined text-[15px]">{opt.icon}</span>
-                <span>{opt.label}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Category Pills (if any exist) */}
-        {categories.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-black/5">
-            <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider mr-2 hidden sm:inline">
-              Temas:
-            </span>
-            <button
-              onClick={() => setSelectedCategory('all')}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
-                selectedCategory === 'all'
-                  ? 'bg-[#133a73] text-white'
-                  : 'bg-transparent text-neutral-600 hover:bg-neutral-100'
-              }`}
-            >
-              Todos los temas
-            </button>
-            {categories.map((cat) => {
-              const isCatActive = selectedCategory.toLowerCase() === cat.toLowerCase();
+        {/* Formatos */}
+        <div>
+          <p className="mb-3 text-base font-semibold text-ink">¿Qué quieres ver?</p>
+          <div className="flex flex-wrap gap-2.5" role="group" aria-label="Filtrar por formato">
+            {typeOptions.map((opt) => {
+              const isActive = selectedType === opt.key;
               return (
                 <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
-                    isCatActive
-                      ? 'bg-[#133a73] text-white'
-                      : 'bg-transparent text-neutral-600 hover:bg-neutral-100'
+                  key={opt.key}
+                  type="button"
+                  aria-pressed={isActive}
+                  onClick={() => setSelectedType(opt.key)}
+                  className={`inline-flex h-12 cursor-pointer items-center gap-2 rounded-full border-2 px-5 text-base font-semibold transition-colors ${
+                    isActive ? 'border-ink bg-ink text-white' : 'border-ink/10 bg-white text-ink hover:border-ink/40'
                   }`}
                 >
-                  {cat}
+                  <Icon name={opt.icon} className="h-5 w-5" />
+                  {opt.label}
                 </button>
               );
             })}
           </div>
+        </div>
+
+        {/* Temas */}
+        {categories.length > 0 && (
+          <div>
+            <p className="mb-3 text-base font-semibold text-ink">Temas</p>
+            <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrar por tema">
+              {['all', ...categories].map((cat) => {
+                const isActive = cat === 'all' ? selectedCategory === 'all' : selectedCategory.toLowerCase() === cat.toLowerCase();
+                return (
+                  <button
+                    key={cat}
+                    type="button"
+                    aria-pressed={isActive}
+                    onClick={() => setSelectedCategory(cat)}
+                    className={`h-10 cursor-pointer rounded-full px-4 text-base transition-colors ${
+                      isActive ? 'bg-brand text-white' : 'bg-paper text-ink hover:bg-ink/10'
+                    }`}
+                  >
+                    {cat === 'all' ? 'Todos los temas' : cat}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         )}
 
-        {/* Active Filters / Results counter */}
-        <div className="flex items-center justify-between text-xs text-neutral-500 pt-2 border-t border-black/5">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-ink/10 pt-5 text-base text-body" aria-live="polite">
           <span>
-            Mostrando <strong>{filteredContents.length}</strong> {filteredContents.length === 1 ? 'recurso' : 'recursos'}
+            {filteredContents.length} {filteredContents.length === 1 ? 'recurso encontrado' : 'recursos encontrados'}
           </span>
-          {(searchTerm !== '' || selectedType !== 'all' || selectedCategory !== 'all') && (
+          {hasFilters && (
             <button
+              type="button"
               onClick={clearFilters}
-              className="text-[#133a73] font-bold hover:underline flex items-center gap-1"
+              className="inline-flex cursor-pointer items-center gap-1.5 font-semibold text-ink underline underline-offset-4"
             >
-              <span className="material-symbols-outlined text-[14px]">restart_alt</span>
-              <span>Restablecer filtros</span>
+              <Icon name="refresh" className="h-4 w-4" />
+              Quitar filtros
             </button>
           )}
         </div>
       </div>
 
-      {/* Cards Grid */}
       {filteredContents.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filteredContents.map((item) => (
             <ContentCard key={item.id} item={item} />
           ))}
         </div>
       ) : (
-        <div className="bg-white rounded-3xl p-12 text-center border border-black/8 space-y-4 max-w-lg mx-auto">
-          <div className="w-16 h-16 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-400 mx-auto">
-            <span className="material-symbols-outlined text-3xl">search_off</span>
-          </div>
-          <h3 className="font-bold text-lg text-neutral-900">No encontramos resultados</h3>
-          <p className="text-sm text-neutral-500">
-            No hay recursos que coincidan con los filtros seleccionados. Intenta buscar otro término o restablece los filtros.
+        <div className="mx-auto max-w-lg space-y-5 rounded-[2rem] bg-white p-10 text-center">
+          <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-paper text-body">
+            <Icon name="search" className="h-8 w-8" />
+          </span>
+          <h3 className="font-display text-2xl text-ink">
+            {initialContents.length === 0 ? 'Muy pronto habrá contenido aquí' : 'No encontramos resultados'}
+          </h3>
+          <p className="text-lg text-body">
+            {initialContents.length === 0
+              ? 'Estamos preparando las primeras lecciones. Vuelve pronto.'
+              : 'Prueba con otra palabra o quita los filtros.'}
           </p>
-          <button
-            onClick={clearFilters}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#001531] text-white text-xs font-bold hover:bg-[#133a73] transition-colors"
-          >
-            <span>Ver todo el catálogo</span>
-          </button>
+          {hasFilters && (
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="inline-flex h-12 cursor-pointer items-center rounded-full bg-ink px-6 text-base font-semibold text-white hover:bg-brand"
+            >
+              Ver todo el catálogo
+            </button>
+          )}
         </div>
       )}
     </div>

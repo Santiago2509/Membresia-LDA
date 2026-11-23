@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { createSupabaseBrowserClient } from '@/lib/supabase';
+import { Icon } from '@/components/ui/Icon';
 import { EPAYCO_PLAN_URL } from '@/lib/membership';
 
 export default function LoginPage() {
@@ -89,232 +90,173 @@ export default function LoginPage() {
     }
   };
 
+  const inputClass =
+    'block h-14 w-full rounded-2xl border-2 border-ink/15 bg-white px-4 text-lg text-ink placeholder:text-body/60 focus:border-brand focus:outline-none';
+
   return (
-    <div className="flex-grow flex items-center justify-center relative overflow-hidden pt-28 pb-16 px-6 min-h-[calc(100vh-80px)]">
-      
-      <div className="relative w-full max-w-md z-10">
-        
-        {/* Logo Icon + Título (sin imagen rota) */}
-        <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-3 justify-center mb-4 group focus:outline-none">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#133a73] via-[#12a04a] to-[#2b93d1] p-0.5 shadow-md group-hover:scale-105 transition-transform">
-              <div className="w-full h-full bg-white rounded-[14px] flex items-center justify-center">
-                <span className="material-symbols-outlined text-[#133a73] text-[26px]">
-                  psychology
-                </span>
-              </div>
-            </div>
-          </Link>
-          
-          <h1 className="font-headline-md text-headline-md text-primary font-bold tracking-tight">
-            {isResetMode ? 'Recuperar Contraseña' : 'Iniciar Sesión'}
+    <div className="flex min-h-[calc(100vh-80px)] flex-grow items-center justify-center px-4 pb-16 pt-28">
+      <div className="w-full max-w-lg">
+        <div className="mb-8 text-center">
+          <img src="/logo-mark.png" alt="" className="mx-auto h-14 w-auto" />
+          <h1 className="mt-5 font-display text-4xl text-ink sm:text-5xl">
+            {isResetMode ? 'Recuperar contraseña' : 'Iniciar sesión'}
           </h1>
-          <p className="font-body-md text-sm text-neutral-600 mt-2 max-w-sm mx-auto">
-            {isResetMode 
-              ? 'Ingresa tu correo y te enviaremos las instrucciones para restablecer tu acceso.'
-              : 'Ingresa con el correo y la contraseña asignada a tu membresía.'}
+          <p className="mx-auto mt-3 max-w-sm text-lg text-body">
+            {isResetMode
+              ? 'Escribe tu correo y te enviaremos un enlace para crear una nueva contraseña.'
+              : 'Entra con el correo y la contraseña que recibiste al suscribirte.'}
           </p>
         </div>
 
-        {/* Tarjeta de Login */}
-        <div className="bg-surface-container-lowest/90 backdrop-blur-xl p-8 rounded-3xl shadow-xl border border-black/10">
-          
-          {/* Mensajes de Error */}
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 text-red-700 text-xs sm:text-sm rounded-xl font-medium border border-red-200 flex items-start gap-2.5">
-              <span className="material-symbols-outlined text-[20px] text-red-500 shrink-0 mt-0.5">error</span>
-              <span>{error}</span>
-            </div>
-          )}
-
-          {resetError && (
-            <div className="mb-6 p-4 bg-red-50 text-red-700 text-xs sm:text-sm rounded-xl font-medium border border-red-200 flex items-start gap-2.5">
-              <span className="material-symbols-outlined text-[20px] text-red-500 shrink-0 mt-0.5">error</span>
-              <span>{resetError}</span>
+        <div className="rounded-[2rem] bg-white p-6 shadow-[0_20px_60px_rgba(11,31,58,0.08)] sm:p-10">
+          {(error || resetError) && (
+            <div role="alert" className="mb-6 rounded-2xl border-2 border-red-200 bg-red-50 p-4 text-base text-red-800">
+              {error || resetError}
             </div>
           )}
 
           {!isResetMode ? (
-            /* Formulario normal de Correo + Contraseña */
-            <form onSubmit={handleLogin} className="space-y-5">
-              
-              {/* Campo Correo */}
-              <div className="space-y-1.5">
-                <label htmlFor="email" className="font-label-sm text-xs font-bold text-neutral-800 uppercase tracking-wider block">
-                  Correo Electrónico
+            <form onSubmit={handleLogin} className="space-y-6">
+              <div>
+                <label htmlFor="email" className="mb-2 block text-base font-semibold text-ink">
+                  Correo electrónico
                 </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400">
-                    <span className="material-symbols-outlined text-[20px]">mail</span>
-                  </div>
-                  <input 
-                    type="email" 
-                    name="email" 
-                    id="email" 
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="block w-full pl-11 pr-4 py-3 rounded-xl border border-black/15 bg-white text-on-surface font-body-md text-sm placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all" 
-                    placeholder="tunombre@correo.com" 
-                    required 
-                  />
-                </div>
+                <input
+                  type="email"
+                  name="email"
+                  id="email"
+                  autoComplete="email"
+                  inputMode="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className={inputClass}
+                  placeholder="tunombre@correo.com"
+                  required
+                />
               </div>
 
-              {/* Campo Contraseña */}
-              <div className="space-y-1.5">
-                <div className="flex justify-between items-center">
-                  <label htmlFor="password" className="font-label-sm text-xs font-bold text-neutral-800 uppercase tracking-wider block">
-                    Contraseña
-                  </label>
-                  <button 
-                    type="button"
-                    onClick={() => { setIsResetMode(true); setError(null); }}
-                    className="text-xs text-primary font-semibold hover:underline"
-                  >
-                    ¿Olvidaste tu contraseña?
-                  </button>
-                </div>
+              <div>
+                <label htmlFor="password" className="mb-2 block text-base font-semibold text-ink">
+                  Contraseña
+                </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400">
-                    <span className="material-symbols-outlined text-[20px]">lock</span>
-                  </div>
-                  <input 
-                    type={showPassword ? 'text' : 'password'} 
-                    name="password" 
-                    id="password" 
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    name="password"
+                    id="password"
+                    autoComplete="current-password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="block w-full pl-11 pr-11 py-3 rounded-xl border border-black/15 bg-white text-on-surface font-body-md text-sm placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all" 
-                    placeholder="Tu contraseña (ej: LDA-XXXXXX)" 
-                    required 
+                    className={`${inputClass} pr-28`}
+                    placeholder="Tu contraseña"
+                    required
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-neutral-400 hover:text-neutral-600 focus:outline-none"
-                    aria-label="Mostrar u ocultar contraseña"
+                    aria-pressed={showPassword}
+                    className="absolute right-2 top-1/2 h-10 -translate-y-1/2 cursor-pointer rounded-xl px-3 text-base font-semibold text-brand hover:bg-brand/10"
                   >
-                    <span className="material-symbols-outlined text-[20px]">
-                      {showPassword ? 'visibility_off' : 'visibility'}
-                    </span>
+                    {showPassword ? 'Ocultar' : 'Mostrar'}
                   </button>
                 </div>
+                <p className="mt-2 text-sm text-body">Si es la primera vez, usa la contraseña temporal del correo (empieza por LDA-).</p>
               </div>
 
-              {/* Botón Iniciar Sesión */}
-              <button 
+              <button
                 type="submit"
-                disabled={loading} 
-                className="w-full flex items-center justify-center gap-2 h-12 py-3 rounded-full bg-primary text-on-primary font-label-md text-sm font-bold shadow-md hover:bg-primary/90 transition-all duration-200 hover:-translate-y-0.5 disabled:opacity-60 disabled:hover:translate-y-0 cursor-pointer"
+                disabled={loading}
+                className="flex h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-ink text-lg font-semibold text-white transition-colors hover:bg-brand disabled:opacity-60"
               >
                 {loading ? (
                   <>
-                    <div className="w-5 h-5 border-2 border-on-primary/30 border-t-on-primary rounded-full animate-spin"></div>
-                    <span>Iniciando sesión...</span>
+                    <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                    Entrando…
                   </>
                 ) : (
                   <>
-                    <span>Acceder a mi Cuenta</span>
-                    <span className="material-symbols-outlined text-[18px]">login</span>
+                    Entrar a mi aula
+                    <Icon name="arrow-right" className="h-5 w-5" />
                   </>
                 )}
               </button>
+
+              <button
+                type="button"
+                onClick={() => { setIsResetMode(true); setError(null); }}
+                className="w-full cursor-pointer py-2 text-center text-base font-semibold text-brand underline underline-offset-4"
+              >
+                ¿Olvidaste tu contraseña?
+              </button>
+            </form>
+          ) : !resetSent ? (
+            <form onSubmit={handleResetPassword} className="space-y-6">
+              <div>
+                <label htmlFor="reset-email" className="mb-2 block text-base font-semibold text-ink">
+                  Correo con el que te suscribiste
+                </label>
+                <input
+                  type="email"
+                  id="reset-email"
+                  autoComplete="email"
+                  inputMode="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className={inputClass}
+                  placeholder="tunombre@correo.com"
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={resetLoading}
+                className="flex h-14 w-full cursor-pointer items-center justify-center rounded-full bg-ink text-lg font-semibold text-white transition-colors hover:bg-brand disabled:opacity-60"
+              >
+                {resetLoading ? 'Enviando…' : 'Enviarme el enlace'}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setIsResetMode(false); setResetError(null); }}
+                className="w-full cursor-pointer py-2 text-center text-base font-semibold text-body underline underline-offset-4"
+              >
+                Volver a iniciar sesión
+              </button>
             </form>
           ) : (
-            /* Formulario de Recuperación */
-            <div>
-              {!resetSent ? (
-                <form onSubmit={handleResetPassword} className="space-y-5">
-                  <div className="space-y-1.5">
-                    <label htmlFor="reset-email" className="font-label-sm text-xs font-bold text-neutral-800 uppercase tracking-wider block">
-                      Correo Electrónico Registrado
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400">
-                        <span className="material-symbols-outlined text-[20px]">mail</span>
-                      </div>
-                      <input 
-                        type="email" 
-                        id="reset-email" 
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="block w-full pl-11 pr-4 py-3 rounded-xl border border-black/15 bg-white text-on-surface font-body-md text-sm placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all" 
-                        placeholder="ejemplo@correo.com" 
-                        required 
-                      />
-                    </div>
-                  </div>
-
-                  <button 
-                    type="submit"
-                    disabled={resetLoading} 
-                    className="w-full flex items-center justify-center gap-2 h-12 py-3 rounded-full bg-primary text-on-primary font-label-md text-sm font-bold shadow-md hover:bg-primary/90 transition-all duration-200 hover:-translate-y-0.5 disabled:opacity-60 cursor-pointer"
-                  >
-                    {resetLoading ? 'Enviando enlace...' : 'Enviar enlace de recuperación'}
-                  </button>
-
-                  <button 
-                    type="button"
-                    onClick={() => { setIsResetMode(false); setResetError(null); }}
-                    className="w-full text-center text-xs text-neutral-600 hover:text-primary font-medium py-2"
-                  >
-                    ← Volver a iniciar sesión
-                  </button>
-                </form>
-              ) : (
-                <div className="text-center py-4 space-y-4">
-                  <div className="w-14 h-14 bg-green-100 text-green-700 rounded-full flex items-center justify-center mx-auto">
-                    <span className="material-symbols-outlined text-[30px]">mark_email_read</span>
-                  </div>
-                  <h3 className="font-bold text-primary text-base">¡Enlace enviado!</h3>
-                  <p className="text-xs text-neutral-600">
-                    Revisa tu bandeja de entrada en <strong className="text-neutral-900">{email}</strong> para restablecer tu contraseña.
-                  </p>
-                  <button 
-                    type="button"
-                    onClick={() => { setIsResetMode(false); setResetSent(false); }}
-                    className="mt-2 text-xs text-primary font-bold hover:underline"
-                  >
-                    Volver al login
-                  </button>
-                </div>
-              )}
+            <div className="space-y-4 py-4 text-center animate-fade-up">
+              <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-calm/15 text-calm">
+                <Icon name="mail" className="h-8 w-8" />
+              </span>
+              <h2 className="font-display text-3xl text-ink">Revisa tu correo</h2>
+              <p className="text-lg text-body">
+                Te enviamos un enlace a <strong className="text-ink">{email}</strong>. Ábrelo para crear tu nueva
+                contraseña. Si no aparece, mira en spam o promociones.
+              </p>
+              <button
+                type="button"
+                onClick={() => { setIsResetMode(false); setResetSent(false); }}
+                className="cursor-pointer py-2 text-base font-semibold text-brand underline underline-offset-4"
+              >
+                Volver a iniciar sesión
+              </button>
             </div>
           )}
-
-          {/* Separador e Indicadores de Confianza */}
-          <div className="flex items-center gap-3 my-6">
-            <div className="flex-1 h-px bg-black/10"></div>
-            <span className="font-label-xs text-xs text-neutral-400">Libre de Ansiedad</span>
-            <div className="flex-1 h-px bg-black/10"></div>
-          </div>
-          
-          <div className="flex items-center justify-center gap-4 text-neutral-500 font-label-xs text-xs">
-            <div className="flex items-center gap-1">
-              <span className="material-symbols-outlined text-[15px] text-green-600">verified_user</span>
-              <span>Acceso Seguro SSL</span>
-            </div>
-            <span className="opacity-40">•</span>
-            <div className="flex items-center gap-1">
-              <span className="material-symbols-outlined text-[15px] text-primary">auto_stories</span>
-              <span>Aula Virtual 24/7</span>
-            </div>
-          </div>
         </div>
 
-        {/* Enlace directo a ePayco para comprar membresía */}
-        <div className="mt-8 text-center">
-          <p className="font-label-sm text-sm text-neutral-600">
-            ¿Aún no tienes membresía activa?{' '}
-            <Link 
-              href={epaycoPlanUrl}
-              className="text-primary font-bold hover:underline"
-            >
-              Comprar membresía aquí
+        <div className="mt-8 space-y-2 text-center text-lg text-body">
+          <p>
+            ¿Todavía no eres miembro?{' '}
+            <Link href={epaycoPlanUrl} className="font-semibold text-ink underline underline-offset-4">
+              Suscríbete aquí
+            </Link>
+          </p>
+          <p className="text-base">
+            ¿Problemas para entrar?{' '}
+            <Link href="/contacto" className="font-semibold text-ink underline underline-offset-4">
+              Te ayudamos
             </Link>
           </p>
         </div>
-
       </div>
     </div>
   );

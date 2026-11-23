@@ -6,7 +6,30 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { getEmbedUrl } from '@/lib/videoUtils';
 import { createSupabaseBrowserClient } from '@/lib/supabase';
-import { EPAYCO_PLAN_URL } from '@/lib/membership';
+import { EPAYCO_PLAN_URL, MEMBERSHIP_PRICE_LABEL } from '@/lib/membership';
+import { Icon } from './ui/Icon';
+import type { Components } from 'react-markdown';
+
+// Estilos del texto de las lecciones (Markdown), legibles para todas las edades
+const markdownComponents: Components = {
+  h1: ({ children }) => <h2 className="mt-10 mb-4 font-display text-3xl leading-tight text-ink">{children}</h2>,
+  h2: ({ children }) => <h2 className="mt-10 mb-4 font-display text-3xl leading-tight text-ink">{children}</h2>,
+  h3: ({ children }) => <h3 className="mt-8 mb-3 font-display text-2xl text-ink">{children}</h3>,
+  h4: ({ children }) => <h4 className="mt-6 mb-2 text-xl font-semibold text-ink">{children}</h4>,
+  p: ({ children }) => <p className="my-5 whitespace-pre-line text-lg leading-[1.8] text-body sm:text-xl">{children}</p>,
+  ul: ({ children }) => <ul className="my-5 list-disc space-y-2 pl-7 text-lg leading-relaxed text-body marker:text-calm sm:text-xl">{children}</ul>,
+  ol: ({ children }) => <ol className="my-5 list-decimal space-y-2 pl-7 text-lg leading-relaxed text-body marker:font-semibold marker:text-ink sm:text-xl">{children}</ol>,
+  li: ({ children }) => <li className="pl-1">{children}</li>,
+  a: ({ children, href }) => (
+    <a href={href} target="_blank" rel="noopener noreferrer" className="font-semibold text-brand underline underline-offset-4">{children}</a>
+  ),
+  strong: ({ children }) => <strong className="font-semibold text-ink">{children}</strong>,
+  blockquote: ({ children }) => (
+    <blockquote className="my-6 rounded-2xl border-l-4 border-calm bg-calm/10 px-6 py-2 text-ink">{children}</blockquote>
+  ),
+  hr: () => <hr className="my-10 border-ink/10" />,
+  img: ({ src, alt }) => <img src={typeof src === 'string' ? src : undefined} alt={alt || ''} className="my-6 w-full rounded-2xl" />,
+};
 
 interface LessonViewProps {
   contentId: string;
@@ -175,199 +198,150 @@ export default function LessonView({
   const embedUrl = content?.url ? getEmbedUrl(content.url) : null;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-20">
-      
-      {/* Navegación y retorno */}
-      <div className="flex items-center justify-between gap-4">
-        <Link 
-          href="/catalogo" 
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/90 border border-black/10 text-neutral-700 hover:text-neutral-900 transition-colors shadow-sm text-xs font-bold"
+    <div className="mx-auto max-w-4xl space-y-6 pb-20">
+      {/* Volver */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Link
+          href="/catalogo"
+          className="inline-flex h-12 items-center gap-2 rounded-full border-2 border-ink/10 bg-white px-5 text-base font-semibold text-ink transition-colors hover:border-ink/40"
         >
-          <span className="material-symbols-outlined text-[18px]">arrow_back</span>
-          <span>Volver al Catálogo</span>
+          <Icon name="arrow-right" className="h-5 w-5 rotate-180" />
+          Volver al catálogo
         </Link>
 
-        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
+        <div className="flex flex-wrap items-center gap-2 text-sm font-semibold">
           {content?.category && (
-            <span className="px-3 py-1 rounded-full bg-white/90 border border-black/8 text-[#133a73] shadow-sm">
-              {content.category}
-            </span>
+            <span className="rounded-full bg-white px-3.5 py-1.5 text-brand">{content.category}</span>
           )}
           {content?.is_premium ? (
-            <span className="px-2.5 py-1 rounded-full bg-[#001531] text-amber-300 flex items-center gap-1 shadow-sm font-bold text-[11px]">
-              <span className="material-symbols-outlined text-[13px]">lock</span>
-              <span>Premium</span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-ink px-3.5 py-1.5 text-white">
+              <Icon name="lock" className="h-4 w-4" />
+              Solo miembros
             </span>
           ) : (
-            <span className="px-2.5 py-1 rounded-full bg-emerald-700 text-white flex items-center gap-1 shadow-sm font-bold text-[11px]">
-              <span className="material-symbols-outlined text-[13px]">public</span>
-              <span>Gratis</span>
-            </span>
+            <span className="rounded-full bg-calm px-3.5 py-1.5 text-white">Gratis</span>
           )}
         </div>
       </div>
 
-      {/* =========================================================================
-          ESTADO 1: VERIFICANDO ACCESO (Solo visible una fracción de segundo)
-          ========================================================================= */}
       {isCheckingClient ? (
-        <div className="bg-white rounded-3xl p-12 text-center border border-black/10 shadow-sm space-y-4">
-          <div className="w-12 h-12 rounded-full bg-primary/10 border-2 border-primary border-t-transparent animate-spin mx-auto" />
-          <p className="text-sm font-semibold text-neutral-600">
-            Verificando tu acceso de miembro...
-          </p>
+        /* ESTADO 1: verificando acceso */
+        <div className="space-y-4 rounded-[2rem] bg-white p-12 text-center">
+          <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-brand border-t-transparent" />
+          <p className="text-lg text-body">Verificando tu acceso…</p>
         </div>
       ) : hasAccess ? (
-        /* =========================================================================
-            ESTADO 2: CONTENIDO DESBLOQUEADO (Miembro Activo)
-            ========================================================================= */
-        <div className="bg-white rounded-3xl p-6 sm:p-10 border border-black/10 shadow-[0_4px_24px_rgba(0,0,0,0.03)] space-y-8">
-          
-          {/* 1. Título principal de la lección */}
-          <div className="space-y-3 pb-2 border-b border-black/5">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl text-[#001531] font-bold tracking-tight leading-tight">
-              {content?.title}
-            </h1>
+        /* ESTADO 2: contenido desbloqueado */
+        <article className="overflow-hidden rounded-[2rem] bg-white shadow-[0_10px_40px_rgba(11,31,58,0.06)]">
+          <header className="px-6 pt-8 sm:px-12 sm:pt-12">
+            <h1 className="font-display text-4xl leading-[1.1] tracking-[-0.01em] text-ink sm:text-5xl">{content?.title}</h1>
             {content?.description && (
-              <p className="text-sm sm:text-base text-neutral-600 italic border-l-4 border-[#133a73] pl-4 py-1">
-                {content.description}
-              </p>
+              <p className="mt-5 text-xl leading-relaxed text-body">{content.description}</p>
             )}
-          </div>
+          </header>
 
-          {/* 2. Video o Portada si existe */}
           {embedUrl ? (
-            <div className="w-full aspect-video rounded-2xl overflow-hidden shadow-2xl border border-black/10 relative bg-black my-6">
-              <iframe 
-                src={embedUrl} 
-                className="w-full h-full border-0" 
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                allowFullScreen
-                title={content?.title || 'Video de la lección'}
-              />
+            <div className="mt-8 px-0 sm:px-12">
+              <div className="relative aspect-video w-full overflow-hidden bg-black sm:rounded-2xl">
+                <iframe
+                  src={embedUrl}
+                  className="h-full w-full border-0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  title={content?.title || 'Video de la lección'}
+                />
+              </div>
             </div>
           ) : content?.thumbnail_url ? (
-            <div className="w-full aspect-video rounded-2xl overflow-hidden shadow-md border border-black/10 relative bg-neutral-100 my-4">
-              <img 
-                src={content.thumbnail_url} 
-                alt={content.title} 
-                className="w-full h-full object-cover" 
-              />
+            <div className="mt-8 px-0 sm:px-12">
+              <img src={content.thumbnail_url} alt="" className="aspect-video w-full object-cover sm:rounded-2xl" />
             </div>
           ) : null}
 
-          {/* 3. Contenido editorial completo (Texto y ejercicios guiados) */}
-          {content?.body && (
-            <article className="prose prose-slate prose-base sm:prose-lg max-w-none 
-              prose-p:text-neutral-800 prose-p:leading-relaxed prose-p:my-4
-              prose-headings:text-[#001531] prose-headings:font-bold prose-headings:tracking-tight
-              prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg
-              prose-a:text-[#133a73] hover:prose-a:underline prose-a:font-bold
-              prose-strong:text-neutral-900 prose-strong:font-bold
-              prose-ul:my-4 prose-li:my-1.5 prose-li:text-neutral-800
-              prose-blockquote:border-l-4 prose-blockquote:border-l-[#133a73] prose-blockquote:bg-blue-50/50 prose-blockquote:p-4 prose-blockquote:rounded-r-2xl prose-blockquote:text-neutral-700">
-              <ReactMarkdown 
-                remarkPlugins={[remarkGfm]}
-                components={{
-                  p: ({ children }) => <p className="whitespace-pre-line mb-4">{children}</p>,
-                }}
-              >
-                {content.body}
-              </ReactMarkdown>
-            </article>
-          )}
-
-          {/* 4. Texto explicativo posterior al video si aplica */}
-          {content?.body_after && (
-            <article className="prose prose-slate prose-base sm:prose-lg max-w-none pt-6 border-t border-black/5
-              prose-p:text-neutral-800 prose-p:leading-relaxed prose-p:my-4
-              prose-headings:text-[#001531] prose-headings:font-bold
-              prose-a:text-[#133a73] hover:prose-a:underline prose-a:font-bold
-              prose-strong:text-neutral-900 prose-strong:font-bold
-              prose-blockquote:border-l-4 prose-blockquote:border-l-[#12a04a] prose-blockquote:bg-emerald-50/50 prose-blockquote:p-4 prose-blockquote:rounded-r-2xl prose-blockquote:text-neutral-700">
-              <ReactMarkdown 
-                remarkPlugins={[remarkGfm]}
-                components={{
-                  p: ({ children }) => <p className="whitespace-pre-line mb-4">{children}</p>,
-                }}
-              >
-                {content.body_after}
-              </ReactMarkdown>
-            </article>
-          )}
-
-          {/* 5. Material Complementario / Descarga */}
-          {content?.resource_url && (
-            <div className="pt-6 border-t border-black/10 flex flex-col sm:flex-row items-center justify-between gap-4 bg-neutral-50 p-6 rounded-2xl">
-              <div>
-                <h4 className="font-bold text-sm text-neutral-900">
-                  {content.resource_title || 'Material Complementario'}
-                </h4>
-                <p className="text-xs text-neutral-500">
-                  Accede a los recursos adjuntos recomendados para esta sesión.
-                </p>
+          <div className="px-6 pb-10 pt-4 sm:px-12 sm:pb-14">
+            {content?.body && (
+              <div className="mx-auto max-w-[68ch]">
+                <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                  {content.body}
+                </ReactMarkdown>
               </div>
+            )}
 
-              <a 
-                href={content.resource_url} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#133a73] text-white font-label-md text-xs sm:text-sm font-bold hover:bg-[#001531] transition-all shadow-md hover:-translate-y-0.5 shrink-0"
-              >
-                <span>{content.resource_title || 'Abrir Recurso'}</span>
-                <span className="material-symbols-outlined text-[18px]">download</span>
-              </a>
-            </div>
-          )}
+            {content?.body_after && (
+              <div className="mx-auto mt-6 max-w-[68ch] border-t border-ink/10 pt-6">
+                <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                  {content.body_after}
+                </ReactMarkdown>
+              </div>
+            )}
 
-        </div>
-      ) : (
-        /* =========================================================================
-            ESTADO 3: BLOQUEO (Solo para visitantes no logueados o vencidos)
-            ========================================================================= */
-        <div className="bg-white rounded-3xl p-8 sm:p-12 text-center border border-black/10 shadow-sm space-y-6">
-          <div className="w-16 h-16 rounded-full bg-neutral-100 flex items-center justify-center mx-auto text-[#133a73]">
-            <span className="material-symbols-outlined text-[32px]">lock</span>
+            {content?.resource_url && (
+              <div className="mt-10 flex flex-col items-start justify-between gap-5 rounded-2xl bg-sun/15 p-6 sm:flex-row sm:items-center sm:p-8">
+                <div className="flex items-start gap-4">
+                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white text-[#b9771f]">
+                    <Icon name="file" className="h-6 w-6" />
+                  </span>
+                  <div>
+                    <h2 className="text-xl font-semibold text-ink">{content.resource_title || 'Material complementario'}</h2>
+                    <p className="mt-1 text-base text-body">Descárgalo o ábrelo para practicar lo que viste en esta lección.</p>
+                  </div>
+                </div>
+                <a
+                  href={content.resource_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex h-14 w-full shrink-0 items-center justify-center gap-2 rounded-full bg-ink px-7 text-lg font-semibold text-white transition-colors hover:bg-brand sm:w-auto"
+                >
+                  Abrir material
+                  <Icon name="arrow-right" className="h-5 w-5" />
+                </a>
+              </div>
+            )}
           </div>
-
-          <div className="max-w-md mx-auto space-y-2">
-            <h2 className="font-headline-sm text-xl font-bold text-[#001531]">
-              Contenido Exclusivo para Miembros
+        </article>
+      ) : (
+        /* ESTADO 3: bloqueado (sin sesión o membresía vencida) */
+        <div className="space-y-6 rounded-[2rem] bg-white p-8 text-center sm:p-14">
+          <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-brand/10 text-brand">
+            <Icon name="lock" className="h-8 w-8" />
+          </span>
+          <div className="mx-auto max-w-lg space-y-3">
+            {content?.title && <p className="text-base font-semibold text-body">{content.title}</p>}
+            <h2 className="font-display text-3xl text-ink sm:text-4xl">
+              {isExpired ? 'Tu membresía venció' : 'Este contenido es para miembros'}
             </h2>
-            <p className="font-body-md text-sm text-neutral-600">
-              {isExpired 
-                ? 'Tu periodo de membresía ha concluido. Renueva para continuar disfrutando del acompañamiento y las lecciones.'
-                : 'Esta lección forma parte de la membresía premium. Suscríbete o inicia sesión para acceder a todo el material.'}
+            <p className="text-lg leading-relaxed text-body">
+              {isExpired
+                ? 'Renueva tu membresía para seguir viendo esta lección y todo el material del aula.'
+                : requireLogin
+                ? 'Si ya eres miembro, inicia sesión. Si todavía no, suscríbete para ver esta lección y todo el material.'
+                : 'Suscríbete para ver esta lección y todo el material del aula.'}
             </p>
           </div>
 
-          <div className="pt-2 flex flex-col sm:flex-row justify-center items-center gap-3">
-            {requireLogin ? (
-              <Link 
-                href={`/login?redirect=/aula/contenido/${contentId}`} 
-                className="w-full sm:w-auto px-7 py-3.5 bg-[#133a73] text-white rounded-full font-label-md text-sm font-bold hover:bg-[#001531] transition-all shadow-md"
+          <div className="mx-auto flex max-w-md flex-col gap-3">
+            {requireLogin && (
+              <Link
+                href={`/login?redirect=/aula/contenido/${contentId}`}
+                className="inline-flex h-14 items-center justify-center rounded-full bg-ink px-7 text-lg font-semibold text-white transition-colors hover:bg-brand"
               >
-                Iniciar sesión para acceder
-              </Link>
-            ) : (
-              <Link 
-                href={epaycoPlanUrl}
-                className="w-full sm:w-auto px-7 py-3.5 bg-[#133a73] text-white rounded-full font-label-md text-sm font-bold hover:bg-[#001531] transition-all shadow-md"
-              >
-                {isExpired ? 'Renovar Membresía ($30 USD/mes)' : 'Adquirir Membresía ($30 USD/mes)'}
+                Ya soy miembro: iniciar sesión
               </Link>
             )}
-            
-            <Link 
-              href="/catalogo" 
-              className="w-full sm:w-auto px-6 py-3.5 rounded-full text-neutral-700 hover:bg-neutral-100 font-label-md text-sm font-semibold transition-colors"
+            <Link
+              href={epaycoPlanUrl}
+              className={`inline-flex h-14 items-center justify-center rounded-full px-7 text-lg font-semibold transition-colors ${
+                requireLogin ? 'border-2 border-ink/15 text-ink hover:border-ink' : 'bg-ink text-white hover:bg-brand'
+              }`}
             >
+              {isExpired ? 'Renovar' : 'Suscribirme'} por {MEMBERSHIP_PRICE_LABEL}/mes
+            </Link>
+            <Link href="/catalogo" className="py-2 text-base font-semibold text-body underline underline-offset-4">
               Ver otros contenidos
             </Link>
           </div>
         </div>
       )}
-
     </div>
   );
 }

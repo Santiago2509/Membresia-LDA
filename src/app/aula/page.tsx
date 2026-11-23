@@ -6,6 +6,8 @@ import ContentCard from '@/components/ContentCard';
 import AulaVisitorGate from '@/components/AulaVisitorGate';
 import SignOutButton from '@/components/SignOutButton';
 import { BrandStripe } from '@/components/BrandStripe';
+import { Icon } from '@/components/ui/Icon';
+import { BreathingExercise } from '@/components/BreathingExercise';
 import { CONTENT_CARD_COLUMNS, EPAYCO_PLAN_URL, MEMBERSHIP_PRICE_LABEL, isAdminEmail, isMembershipActive } from '@/lib/membership';
 import { toContentCard } from '@/lib/contentCards';
 import { format } from 'date-fns';
@@ -38,85 +40,40 @@ export default async function AulaDashboard() {
   if (!user) {
     return (
       <AulaVisitorGate>
-        <div className="max-w-3xl mx-auto py-12 sm:py-20 px-4">
-          <div className="bg-white rounded-3xl p-8 sm:p-14 text-center border border-black/8 shadow-[0_8px_30px_rgba(0,0,0,0.04)] space-y-8">
-          
-          <div className="w-20 h-20 rounded-3xl bg-primary/10 flex items-center justify-center mx-auto text-primary shadow-inner">
-            <span className="material-symbols-outlined text-[40px]">school</span>
-          </div>
-
-          <div className="space-y-3 max-w-xl mx-auto">
-            <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-primary/10 text-primary font-bold text-xs uppercase tracking-wider">
-              <span className="material-symbols-outlined text-[14px]">lock</span>
-              <span>Zona Exclusiva para Miembros</span>
+        <div className="mx-auto max-w-3xl py-8 sm:py-16">
+          <div className="space-y-8 rounded-[2rem] bg-white p-8 text-center shadow-[0_10px_40px_rgba(11,31,58,0.06)] sm:p-14">
+            <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-brand/10 text-brand">
+              <Icon name="school" className="h-8 w-8" />
+            </span>
+            <div className="mx-auto max-w-xl space-y-3">
+              <h1 className="font-display text-4xl text-ink sm:text-5xl">Bienvenido al Aula Virtual</h1>
+              <p className="text-lg leading-relaxed text-body">
+                Aquí están las lecciones, audios y guías del Psic. Nelson Arturo. Inicia sesión con el correo y la
+                contraseña que recibiste, o activa tu membresía.
+              </p>
             </div>
-            
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#001531] tracking-tight">
-              Bienvenido al Aula Virtual
-            </h1>
-
-            <p className="text-neutral-600 text-sm sm:text-base leading-relaxed">
-              Este es el espacio de formación, masterclasses y ejercicios clínicos dirigidos por el 
-              Psicólogo Nelson Arturo. Para acceder a tus cursos y sesiones, inicia sesión o activa tu membresía.
-            </p>
-          </div>
-
-          {/* Opciones de Acceso */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 max-w-lg mx-auto">
-            
-            {/* Tarjeta 1: Ya soy miembro */}
-            <div className="bg-neutral-50 rounded-2xl p-6 border border-black/6 flex flex-col justify-between text-left space-y-4">
-              <div>
-                <h3 className="font-bold text-sm text-neutral-900 flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[18px] text-primary">login</span>
-                  <span>Ya soy suscriptor</span>
-                </h3>
-                <p className="text-xs text-neutral-500 mt-1">
-                  Ingresa con tu correo y la contraseña que recibiste tras suscribirte.
-                </p>
-              </div>
-              <Link 
+            <div className="mx-auto grid max-w-lg gap-3">
+              <Link
                 href="/login"
-                className="w-full py-3 rounded-full bg-primary text-white text-center font-bold text-xs shadow-sm hover:bg-primary/90 transition-all"
+                className="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-ink px-7 text-lg font-semibold text-white transition-colors hover:bg-brand"
               >
-                Iniciar Sesión
+                <Icon name="user" className="h-5 w-5" />
+                Ya soy miembro: iniciar sesión
               </Link>
-            </div>
-
-            {/* Tarjeta 2: Quiero suscribirme */}
-            <div className="bg-[#001531] rounded-2xl p-6 text-left flex flex-col justify-between space-y-4 text-white shadow-md">
-              <div>
-                <h3 className="font-bold text-sm text-amber-300 flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[18px]">workspace_premium</span>
-                  <span>Quiero ser miembro</span>
-                </h3>
-                <p className="text-xs text-white/80 mt-1">
-                  Accede a todos los contenidos, masterclasses y acompañamiento.
-                </p>
-              </div>
-              <Link 
+              <Link
                 href={epaycoPlanUrl}
-                className="w-full py-3 rounded-full bg-amber-400 hover:bg-amber-300 text-neutral-900 text-center font-bold text-xs shadow-sm transition-all"
+                className="inline-flex h-14 items-center justify-center rounded-full border-2 border-ink/15 px-7 text-lg font-semibold text-ink transition-colors hover:border-ink"
               >
-                Obtener Membresía ({MEMBERSHIP_PRICE_LABEL}/mes)
+                Quiero ser miembro ({MEMBERSHIP_PRICE_LABEL}/mes)
+              </Link>
+              <Link href="/catalogo" className="py-2 text-base font-semibold text-body underline underline-offset-4">
+                Explorar el catálogo
               </Link>
             </div>
-
-          </div>
-
-          <div className="pt-4 border-t border-black/5">
-            <Link 
-              href="/catalogo"
-              className="text-xs font-bold text-[#133a73] hover:underline flex items-center justify-center gap-1"
-            >
-              <span>Explorar catálogo y lecciones abiertas</span>
-              <span className="material-symbols-outlined text-[15px]">arrow_forward</span>
-            </Link>
           </div>
         </div>
-      </div>
-    </AulaVisitorGate>
-  );
+      </AulaVisitorGate>
+    );
 }
 
   // =========================================================================
@@ -151,34 +108,32 @@ export default async function AulaDashboard() {
   // =========================================================================
   if (!hasActiveMembership) {
     return (
-      <div className="max-w-2xl mx-auto py-12 sm:py-20 px-4">
-        <div className="bg-white rounded-3xl p-8 sm:p-12 text-center border border-black/8 shadow-sm space-y-6">
-          <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mx-auto text-amber-700">
-            <span className="material-symbols-outlined text-[32px]">lock_clock</span>
-          </div>
-
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-amber-50 text-amber-800 text-xs font-bold uppercase tracking-wider">
-              <span>Suscripción Inactiva o Vencida</span>
-            </div>
-            <h2 className="text-2xl font-bold text-[#001531]">
-              Hola, {displayName}
-            </h2>
-            <p className="text-sm text-neutral-600 max-w-md mx-auto leading-relaxed">
-              Tu cuenta está registrada pero no cuenta con una membresía activa en este momento. Activa tu suscripción para desbloquear el Aula Virtual y todas las lecciones.
+      <div className="mx-auto max-w-2xl py-8 sm:py-16">
+        <div className="space-y-7 rounded-[2rem] bg-white p-8 text-center shadow-[0_10px_40px_rgba(11,31,58,0.06)] sm:p-12">
+          <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-sun/20 text-[#b9771f]">
+            <Icon name="calendar" className="h-8 w-8" />
+          </span>
+          <div className="space-y-3">
+            <h1 className="font-display text-4xl text-ink">Hola, {displayName}</h1>
+            <p className="mx-auto max-w-md text-lg leading-relaxed text-body">
+              Tu cuenta está creada, pero tu membresía no está activa en este momento. Actívala para volver a ver todas
+              las lecciones.
+            </p>
+            <p className="text-base text-body">
+              ¿Ya pagaste? A veces la confirmación de ePayco tarda unos minutos. Si pasa más tiempo,{' '}
+              <Link href="/contacto" className="font-semibold text-ink underline underline-offset-4">escríbenos</Link>.
             </p>
           </div>
-
-          <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Link 
+          <div className="mx-auto grid max-w-md gap-3">
+            <Link
               href={epaycoPlanUrl}
-              className="w-full sm:w-auto px-8 py-3.5 rounded-full bg-primary text-white font-bold text-sm hover:bg-primary/90 transition-all shadow-md"
+              className="inline-flex h-14 items-center justify-center rounded-full bg-ink px-7 text-lg font-semibold text-white transition-colors hover:bg-brand"
             >
-              Activar Membresía ({MEMBERSHIP_PRICE_LABEL}/mes)
+              Activar membresía ({MEMBERSHIP_PRICE_LABEL}/mes)
             </Link>
-            <SignOutButton 
+            <SignOutButton
               type="member"
-              className="w-full sm:w-auto px-6 py-3.5 rounded-full text-neutral-600 hover:bg-neutral-100 font-bold text-sm transition-colors"
+              className="inline-flex h-14 cursor-pointer items-center justify-center rounded-full border-2 border-ink/15 px-7 text-lg font-semibold text-ink transition-colors hover:border-ink"
             >
               Cerrar sesión
             </SignOutButton>
@@ -208,18 +163,18 @@ export default async function AulaDashboard() {
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-14 pb-16">
       {/* Bienvenida */}
-      <header className="border-b border-black/10 pb-10">
+      <header className="pb-2">
         <BrandStripe className="mb-6" />
-        <h1 className="font-display text-4xl leading-tight tracking-[-0.01em] text-[#001531] sm:text-5xl">
+        <h1 className="font-display text-4xl leading-tight tracking-[-0.01em] text-ink sm:text-5xl">
           Hola, {firstName}
         </h1>
-        <p className="mt-4 text-neutral-600">
+        <p className="mt-4 text-lg leading-relaxed text-body">
           {isAdmin ? (
             'Estás viendo el aula con permisos de administrador.'
           ) : periodEnd ? (
             <>
               Tu membresía está activa hasta el{' '}
-              <strong className="font-semibold text-[#001531]">
+              <strong className="font-semibold text-ink">
                 {format(periodEnd, "d 'de' MMMM 'de' yyyy", { locale: es })}
               </strong>
               . Se renueva automáticamente con ePayco.
@@ -227,7 +182,7 @@ export default async function AulaDashboard() {
           ) : (
             'Tu membresía está activa.'
           )}{' '}
-          <Link href="/aula/perfil" className="font-semibold text-[#001531] underline underline-offset-4">
+          <Link href="/aula/perfil" className="font-semibold text-ink underline underline-offset-4">
             Ver mi perfil
           </Link>
         </p>
@@ -236,17 +191,17 @@ export default async function AulaDashboard() {
       {/* Explorar por formato (conteos reales) */}
       {formats.length > 0 && (
         <section>
-          <h2 className="mb-5 text-xs font-semibold uppercase tracking-[0.18em] text-neutral-500">Explorar por formato</h2>
+          <h2 className="mb-5 font-display text-3xl text-ink">Explorar por formato</h2>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {formats.map((f) => (
               <Link
                 key={f.key}
                 href={`/catalogo?tipo=${f.key}`}
-                className="group rounded-2xl border border-black/10 bg-white p-5 transition-colors hover:border-[#001531]/40"
+                className="group rounded-2xl bg-white p-6 shadow-[0_6px_24px_rgba(11,31,58,0.05)] transition-all hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(11,31,58,0.1)]"
               >
                 <span className="block h-2 w-2 rounded-full" style={{ backgroundColor: f.color }} />
-                <span className="mt-4 block font-display text-3xl text-[#001531]">{f.count}</span>
-                <span className="mt-1 block text-sm text-neutral-600 group-hover:text-[#001531]">{f.label}</span>
+                <span className="mt-4 block font-display text-3xl text-ink">{f.count}</span>
+                <span className="mt-1 block text-base font-medium text-body group-hover:text-ink">{f.label}</span>
               </Link>
             ))}
           </div>
@@ -256,34 +211,40 @@ export default async function AulaDashboard() {
       {/* Contenido reciente */}
       <section>
         <div className="mb-8 flex items-end justify-between gap-4">
-          <h2 className="font-display text-3xl text-[#001531]">Agregado recientemente</h2>
-          <Link href="/catalogo" className="shrink-0 text-sm font-semibold text-[#001531] underline decoration-black/25 underline-offset-[6px] hover:decoration-[#001531]">
+          <h2 className="font-display text-3xl text-ink">Agregado recientemente</h2>
+          <Link href="/catalogo" className="shrink-0 text-sm font-semibold text-ink underline decoration-black/25 underline-offset-[6px] hover:decoration-[#001531]">
             Ver todo →
           </Link>
         </div>
 
         {contents.length > 0 ? (
-          <div className="grid grid-cols-1 gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {contents.map((item) => (
               <ContentCard key={item.id} item={item} />
             ))}
           </div>
         ) : (
-          <p className="rounded-2xl border border-black/10 bg-white p-8 text-center text-neutral-500">
+          <p className="rounded-2xl bg-white p-8 text-center text-lg text-body">
             Todavía no hay contenido publicado. Muy pronto encontrarás aquí las primeras lecciones.
           </p>
         )}
       </section>
 
+      {/* Herramienta rápida */}
+      <section aria-label="Ejercicio de respiración">
+        <h2 className="mb-6 font-display text-3xl text-ink">¿Necesitas calmarte ahora?</h2>
+        <BreathingExercise />
+      </section>
+
       {/* Ayuda */}
-      <section className="flex flex-col justify-between gap-4 rounded-2xl bg-[#001531] p-7 text-white sm:flex-row sm:items-center">
+      <section className="flex flex-col justify-between gap-4 rounded-[2rem] bg-ink p-8 text-white sm:flex-row sm:items-center">
         <div>
           <h2 className="font-display text-2xl">¿Necesitas ayuda?</h2>
-          <p className="mt-1 text-sm text-white/70">Si tienes problemas con tu acceso o una duda sobre el contenido, escríbenos.</p>
+          <p className="mt-1 text-base text-white/75">Si tienes problemas con tu acceso o una duda sobre el contenido, escríbenos.</p>
         </div>
         <Link
           href="/contacto"
-          className="inline-flex h-11 shrink-0 items-center justify-center rounded-full bg-white px-6 text-sm font-semibold text-[#001531] hover:bg-[#f3efe6]"
+          className="inline-flex h-12 shrink-0 items-center justify-center rounded-full bg-white px-6 text-base font-semibold text-ink hover:bg-sun"
         >
           Contactar soporte
         </Link>

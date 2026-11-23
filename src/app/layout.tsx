@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans, Fraunces } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { WhatsAppButton } from "@/components/WhatsAppButton";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -27,17 +28,24 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className={`h-full scroll-smooth ${plusJakartaSans.variable} ${fraunces.variable}`}>
+    <html lang="es" suppressHydrationWarning className={`h-full scroll-smooth ${plusJakartaSans.variable} ${fraunces.variable}`}>
       <head>
-        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=optional" rel="stylesheet" />
-        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=optional" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=block" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block" rel="stylesheet" />
+        {/* Aplica el tamaño de letra elegido antes de pintar, para que no "salte" */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: "try{var s=localStorage.getItem('lda-font-scale');if(s){document.documentElement.style.setProperty('--lda-font-scale',s)}}catch(e){}",
+          }}
+        />
       </head>
-      <body className="bg-background font-body-md text-on-surface antialiased min-h-screen flex flex-col">
+      <body className="bg-paper font-body-md text-ink antialiased min-h-screen flex flex-col">
         <Header />
         <main className="w-full flex-grow flex flex-col">
           {children}
         </main>
         <Footer />
+        <WhatsAppButton />
       </body>
     </html>
   );

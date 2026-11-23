@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { createSupabaseBrowserClient } from '@/lib/supabase';
+import { Icon } from './ui/Icon';
 import SignOutButton from '@/components/SignOutButton';
 
 interface SidebarProfileProps {
@@ -93,53 +94,41 @@ export default function SidebarProfile({
   }, []);
 
   return (
-    <div className="px-4 pt-4 border-t border-black/5 space-y-2">
+    <div className="space-y-3 border-t border-ink/10 px-4 pt-5">
       {user ? (
         <>
-          <div className="bg-neutral-50 hover:bg-neutral-100 transition-colors rounded-2xl p-3 flex items-center justify-between border border-black/5 shadow-inner">
-            <Link 
-              href="/aula/perfil" 
-              className="flex items-center gap-3 overflow-hidden flex-1 group"
-              title="Ver mi perfil y suscripción"
-            >
-              <div className="w-9 h-9 rounded-full bg-[#133a73] flex items-center justify-center text-white font-bold text-xs shrink-0 shadow-sm group-hover:scale-105 transition-transform">
-                {initials}
-              </div>
-              <div className="flex flex-col min-w-0">
-                <span className="font-bold text-xs text-neutral-900 truncate group-hover:text-[#133a73] transition-colors">
-                  {displayName}
-                </span>
-                <span className="text-[11px] text-neutral-500 truncate flex items-center gap-1">
-                  <span className={`w-1.5 h-1.5 rounded-full ${isSubscriber ? 'bg-emerald-500' : 'bg-neutral-400'}`} />
-                  {isSubscriber ? 'Membresía Activa' : 'Cuenta Gratuita'}
-                </span>
-              </div>
-            </Link>
-
-            <SignOutButton 
-              type="member"
-              title="Cerrar sesión"
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-neutral-400 hover:text-red-600 hover:bg-red-50 transition-colors shrink-0 ml-1"
-            >
-              <span className="material-symbols-outlined text-[18px]">logout</span>
-            </SignOutButton>
-          </div>
-
           <Link
             href="/aula/perfil"
-            className="flex items-center justify-center gap-1.5 w-full py-2 px-3 rounded-xl bg-white border border-black/8 text-[11px] font-bold text-neutral-700 hover:text-[#133a73] hover:border-[#133a73]/30 transition-all shadow-sm"
+            className="flex items-center gap-3 rounded-2xl bg-paper p-3 transition-colors hover:bg-ink/5"
+            title="Ver mi perfil y suscripción"
           >
-            <span className="material-symbols-outlined text-[15px]">badge</span>
-            <span>Mi Perfil & Vencimiento</span>
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand text-sm font-semibold text-white">
+              {initials}
+            </span>
+            <span className="flex min-w-0 flex-col">
+              <span className="truncate text-base font-semibold text-ink">{displayName}</span>
+              <span className="flex items-center gap-1.5 text-sm text-body">
+                <span className={`h-2 w-2 rounded-full ${isSubscriber ? 'bg-calm' : 'bg-ink/30'}`} />
+                {isSubscriber ? 'Membresía activa' : 'Sin membresía activa'}
+              </span>
+            </span>
           </Link>
+
+          <SignOutButton
+            type="member"
+            className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-full border-2 border-ink/10 text-base font-semibold text-ink transition-colors hover:border-red-300 hover:text-red-700"
+          >
+            <Icon name="logout" className="h-5 w-5" />
+            Cerrar sesión
+          </SignOutButton>
         </>
       ) : (
-        <Link 
-          href="/login" 
-          className="flex items-center justify-center gap-2 w-full py-3 rounded-full bg-[#001531] text-white text-xs font-bold shadow-sm hover:bg-[#133a73] transition-colors"
+        <Link
+          href="/login"
+          className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-ink text-base font-semibold text-white transition-colors hover:bg-brand"
         >
-          <span className="material-symbols-outlined text-[16px]">login</span>
-          <span>Iniciar Sesión</span>
+          <Icon name="user" className="h-5 w-5" />
+          Iniciar sesión
         </Link>
       )}
     </div>
