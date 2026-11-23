@@ -9,11 +9,13 @@ import { EPAYCO_PLAN_URL } from '@/lib/membership';
 import { Icon, type IconName } from './ui/Icon';
 import { TextSizeControl } from './ui/TextSizeControl';
 
-const NAV: { href: string; label: string; icon: IconName; match: (p: string) => boolean }[] = [
+const NAV: { href: string; label: string; icon: IconName; match: (p: string) => boolean; mobileOnly?: boolean }[] = [
   { href: '/', label: 'Inicio', icon: 'home', match: (p) => p === '/' },
   { href: '/catalogo', label: 'Catálogo', icon: 'grid', match: (p) => p.startsWith('/catalogo') },
-  { href: '/aula', label: 'Mi Aula', icon: 'school', match: (p) => p.startsWith('/aula') && !p.startsWith('/aula/perfil') },
+  { href: '/testimonios', label: 'Testimonios', icon: 'quote', match: (p) => p.startsWith('/testimonios') },
+  { href: '/equipo', label: 'Equipo', icon: 'users', match: (p) => p.startsWith('/equipo') },
   { href: '/contacto', label: 'Contacto', icon: 'chat', match: (p) => p.startsWith('/contacto') },
+  { href: '/aula', label: 'Mi Aula', icon: 'school', match: (p) => p.startsWith('/aula') && !p.startsWith('/aula/perfil'), mobileOnly: true },
 ];
 
 export function Header() {
@@ -90,8 +92,8 @@ export function Header() {
         </Link>
 
         {/* Navegación de escritorio */}
-        <nav aria-label="Principal" className="hidden items-center gap-1 lg:flex">
-          {NAV.map((item) => {
+        <nav aria-label="Principal" className="hidden items-center gap-1 xl:flex">
+          {NAV.filter((item) => !item.mobileOnly).map((item) => {
             const active = item.match(pathname);
             return (
               <Link
@@ -113,11 +115,14 @@ export function Header() {
           <TextSizeControl className="hidden xl:flex" fixedSize />
 
           <Link
-            href={currentUser ? '/aula/perfil' : '/login'}
-            className="hidden h-[44px] items-center gap-2 rounded-full px-[16px] text-[17px] whitespace-nowrap font-semibold text-ink transition-colors hover:bg-ink/5 md:inline-flex"
+            href={currentUser ? '/aula' : '/login'}
+            aria-current={currentUser && pathname.startsWith('/aula') ? 'page' : undefined}
+            className={`hidden h-[44px] items-center gap-2 rounded-full px-[16px] text-[17px] whitespace-nowrap font-semibold transition-colors md:inline-flex ${
+              currentUser && pathname.startsWith('/aula') ? 'bg-ink text-white' : 'text-ink hover:bg-ink/5'
+            }`}
           >
-            <Icon name="user" className="h-[20px] w-[20px]" />
-            {currentUser ? 'Mi perfil' : 'Ingresar'}
+            <Icon name={currentUser ? 'school' : 'user'} className="h-[20px] w-[20px]" />
+            {currentUser ? 'Mi Aula' : 'Ingresar'}
           </Link>
 
           {!currentUser && (
@@ -134,7 +139,7 @@ export function Header() {
             onClick={() => setMenuOpen(!menuOpen)}
             aria-expanded={menuOpen}
             aria-controls="menu-movil"
-            className="inline-flex h-[44px] cursor-pointer items-center gap-2 rounded-full border border-ink/15 bg-white px-4 text-[17px] whitespace-nowrap font-semibold text-ink lg:hidden"
+            className="inline-flex h-[44px] cursor-pointer items-center gap-2 rounded-full border border-ink/15 bg-white px-4 text-[17px] whitespace-nowrap font-semibold text-ink xl:hidden"
           >
             <Icon name={menuOpen ? 'close' : 'menu'} className="h-[20px] w-[20px]" />
             {menuOpen ? 'Cerrar' : 'Menú'}
@@ -144,7 +149,7 @@ export function Header() {
 
       {/* Menú móvil a pantalla completa, con botones grandes */}
       {menuOpen && (
-        <div id="menu-movil" className="h-[calc(100dvh-76px)] overflow-y-auto border-t border-ink/10 bg-paper px-4 pb-10 pt-6 sm:px-6 lg:hidden">
+        <div id="menu-movil" className="h-[calc(100dvh-76px)] overflow-y-auto border-t border-ink/10 bg-paper px-4 pb-10 pt-6 sm:px-6 xl:hidden">
           <nav aria-label="Menú" className="grid gap-2">
             {NAV.map((item) => {
               const active = item.match(pathname);
