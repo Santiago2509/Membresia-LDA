@@ -308,11 +308,11 @@ export default function LessonView({
           <div className="mx-auto max-w-lg space-y-3">
             {content?.title && <p className="text-base font-semibold text-body">{content.title}</p>}
             <h2 className="font-display text-3xl text-ink sm:text-4xl">
-              {isExpired ? 'Tu membresía venció' : 'Este contenido es para miembros'}
+              {isExpired ? 'Tu membresía no está activa' : 'Este contenido es para miembros'}
             </h2>
             <p className="text-lg leading-relaxed text-body">
               {isExpired
-                ? 'Renueva tu membresía para seguir viendo esta lección y todo el material del aula.'
+                ? 'Tu cuenta sigue activa, pero la membresía no. Te explicamos cómo reactivarla en tu misma cuenta, sin pagar dos veces.'
                 : requireLogin
                 ? 'Si ya eres miembro, inicia sesión. Si todavía no, suscríbete para ver esta lección y todo el material.'
                 : 'Suscríbete para ver esta lección y todo el material del aula.'}
@@ -328,14 +328,24 @@ export default function LessonView({
                 Ya soy miembro: iniciar sesión
               </Link>
             )}
-            <Link
-              href={epaycoPlanUrl}
-              className={`inline-flex h-14 items-center justify-center rounded-full px-7 text-lg font-semibold transition-colors ${
-                requireLogin ? 'border-2 border-ink/15 text-ink hover:border-ink' : 'bg-ink text-white hover:bg-brand'
-              }`}
-            >
-              {isExpired ? 'Renovar' : 'Suscribirme'} por {MEMBERSHIP_PRICE_LABEL}/mes
-            </Link>
+            {requireLogin || !isExpired ? (
+              <Link
+                href={epaycoPlanUrl}
+                className={`inline-flex h-14 items-center justify-center rounded-full px-7 text-lg font-semibold transition-colors ${
+                  requireLogin ? 'border-2 border-ink/15 text-ink hover:border-ink' : 'bg-ink text-white hover:bg-brand'
+                }`}
+              >
+                Suscribirme por {MEMBERSHIP_PRICE_LABEL}/mes
+              </Link>
+            ) : (
+              /* Ya tiene cuenta: se le explica cómo reactivar sin crear otra cuenta ni otra suscripción */
+              <Link
+                href="/aula"
+                className="inline-flex h-14 items-center justify-center rounded-full bg-ink px-7 text-lg font-semibold text-white transition-colors hover:bg-brand"
+              >
+                Ver cómo reactivar mi membresía
+              </Link>
+            )}
             <Link href="/catalogo" className="py-2 text-base font-semibold text-body underline underline-offset-4">
               Ver otros contenidos
             </Link>
