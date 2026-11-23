@@ -11,7 +11,7 @@ export function Hero() {
         <div className="lg:col-span-7 lg:pb-24">
           <BrandStripe className="mb-6" />
           <p className="mb-5 text-xs font-semibold uppercase tracking-[0.2em] text-[#133a73]">
-            Membresía · Psic. Nelson Arturo
+            Membresía · Libre de Ansiedad
           </p>
 
           <h1 className="font-display text-[2.6rem] leading-[1.04] tracking-[-0.02em] text-[#001531] sm:text-6xl lg:text-[4.4rem]">
@@ -20,8 +20,9 @@ export function Hero() {
           </h1>
 
           <p className="mt-7 max-w-xl text-lg leading-relaxed text-neutral-700">
-            Videos, audios guiados y guías prácticas creadas por el Psic. Nelson Arturo para que trabajes
-            tu ansiedad desde casa, a tu ritmo, con herramientas de la terapia cognitivo-conductual.
+            Videos, audios guiados y guías prácticas del Psic. Nelson Arturo y el equipo del Centro de
+            Psicología Especializado en Ansiedad, para que trabajes tu ansiedad desde casa, a tu ritmo, con
+            herramientas de la terapia cognitivo-conductual.
           </p>
 
           <div className="mt-9 flex flex-col items-stretch gap-4 sm:flex-row sm:items-center sm:gap-7">

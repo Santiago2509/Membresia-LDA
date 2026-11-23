@@ -9,6 +9,7 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { CONTENT_CARD_COLUMNS, MEMBERSHIP_PRICE_LABEL } from '@/lib/membership';
 import { toContentCard } from '@/lib/contentCards';
+import { CLINIC, CLINIC_STATS, CLINIC_TOPICS } from '@/lib/clinic';
 
 export const revalidate = 0;
 
@@ -87,7 +88,64 @@ export default async function Home() {
       {/* 2. Presentación */}
       <Hero />
 
-      {/* 3. Cómo funciona */}
+      {/* 3. Quién soy (texto real de la web oficial) */}
+      <section id="quien-soy" className="border-b border-black/10">
+        <div className="mx-auto grid max-w-[1200px] grid-cols-1 gap-12 px-5 py-20 sm:px-8 lg:grid-cols-12 lg:gap-16 lg:px-12 lg:py-28">
+          <div className="lg:col-span-5">
+            <div className="relative overflow-hidden rounded-[2rem] bg-[#d9d9d6]">
+              <img
+                src="/nelson-quien-soy.jpg"
+                alt="Psic. Nelson Arturo"
+                className="aspect-[4/5] w-full object-cover object-[70%_center]"
+              />
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#001531]/85 to-transparent p-6 pt-20 text-white">
+                <p className="font-display text-2xl">Nelson Arturo</p>
+                <p className="text-sm text-white/80">Psicólogo especialista en ansiedad</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col justify-center lg:col-span-7">
+            <BrandStripe className="mb-6" />
+            <p className="mb-5 text-xs font-semibold uppercase tracking-[0.2em] text-[#133a73]">Quién soy</p>
+            <blockquote className="font-display text-[1.75rem] leading-snug text-[#001531] sm:text-[2.1rem]">
+              “Soy psicólogo, especialista en el tratamiento de la ansiedad, pero también fui uno de los afectados.
+              Quiero ayudarte a que seas una persona mucho más fuerte, inteligente y calmada para que seas libre y
+              reemprendas tus sueños.”
+            </blockquote>
+            <p className="mt-8 max-w-2xl leading-relaxed text-neutral-700">
+              {CLINIC.name} es un centro de psicología online conformado por un equipo de psicólogos clínicos
+              especializados en ansiedad, estrés y trastornos emocionales. Trabajamos con Terapia
+              Cognitivo-Conductual (TCC) y otras metodologías validadas por la ciencia, sin medicamentos. Esta
+              membresía reúne ese trabajo en videos, audios y guías que puedes usar a tu ritmo.
+            </p>
+            <ul className="mt-8 flex flex-wrap gap-2">
+              {CLINIC_TOPICS.map((topic) => (
+                <li key={topic} className="rounded-full border border-black/15 px-3.5 py-1.5 text-sm text-neutral-700">
+                  {topic}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        {/* Cifras publicadas por el centro */}
+        <div className="border-t border-black/10">
+          <dl className="mx-auto grid max-w-[1200px] grid-cols-2 gap-y-10 px-5 py-12 sm:px-8 lg:grid-cols-4 lg:px-12">
+            {CLINIC_STATS.map((stat) => (
+              <div key={stat.label} className="pr-6">
+                <dt className="sr-only">{stat.label}</dt>
+                <dd>
+                  <span className="block font-display text-4xl text-[#001531] sm:text-5xl">{stat.value}</span>
+                  <span className="mt-2 block max-w-[16rem] text-sm leading-snug text-neutral-600">{stat.label}</span>
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      </section>
+
+      {/* 4. Cómo funciona */}
       <section className="border-b border-black/10">
         <div className="mx-auto grid max-w-[1200px] grid-cols-1 gap-12 px-5 py-20 sm:px-8 lg:grid-cols-12 lg:px-12 lg:py-28">
           <div className="lg:col-span-4">
@@ -116,7 +174,7 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* 4. Qué incluye */}
+      {/* 5. Qué incluye */}
       <section id="que-incluye" className="bg-[#001531] text-white">
         <div id="membresia-exclusiva" className="mx-auto max-w-[1200px] px-5 py-20 sm:px-8 lg:px-12 lg:py-28">
           <div className="grid grid-cols-1 gap-12 lg:grid-cols-12">
@@ -142,7 +200,7 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* 5. Contenido reciente (desde Supabase) */}
+      {/* 6. Contenido reciente (desde Supabase) */}
       {contents.length > 0 && (
         <section id="cursos-destacados" className="border-b border-black/10">
           <div className="mx-auto max-w-[1200px] px-5 py-20 sm:px-8 lg:px-12 lg:py-28">
@@ -169,37 +227,6 @@ export default async function Home() {
           </div>
         </section>
       )}
-
-      {/* 6. Quién está detrás */}
-      <section className="border-b border-black/10">
-        <div className="mx-auto grid max-w-[1200px] grid-cols-1 gap-10 px-5 py-20 sm:px-8 lg:grid-cols-12 lg:px-12 lg:py-28">
-          <div className="lg:col-span-4">
-            <BrandStripe className="mb-6" />
-            <h2 className="font-display text-4xl leading-tight tracking-[-0.01em] text-[#001531] sm:text-5xl">
-              Quién está detrás
-            </h2>
-          </div>
-          <div className="space-y-6 lg:col-span-7 lg:col-start-6">
-            <p className="font-display text-2xl leading-snug text-[#001531] sm:text-[1.7rem]">
-              Libre de Ansiedad es la clínica del Psic. Nelson Arturo. Esta membresía reúne en un solo lugar
-              el material que prepara para sus pacientes.
-            </p>
-            <p className="max-w-2xl leading-relaxed text-neutral-700">
-              Explicaciones claras, ejercicios guiados y guías prácticas, pensadas para que puedas seguir
-              trabajando entre sesiones o empezar por tu cuenta, con un lenguaje sencillo y sin necesidad de
-              conocimientos previos.
-            </p>
-            <p className="max-w-2xl border-l-2 border-[#eeab52] pl-4 text-sm leading-relaxed text-neutral-600">
-              Este contenido es educativo y no reemplaza la atención psicológica individual. Si estás atravesando
-              una crisis, busca ayuda profesional de inmediato.{' '}
-              <Link href="/contacto" className="font-semibold text-[#001531] underline underline-offset-4">
-                Escríbenos para agendar una consulta
-              </Link>
-              .
-            </p>
-          </div>
-        </div>
-      </section>
 
       {/* 7. Precio */}
       <section id="precio-membresia" className="border-b border-black/10">
@@ -234,7 +261,43 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* 8. Preguntas frecuentes */}
+
+      {/* 8. Acompañamiento 1 a 1 (servicios reales del centro) */}
+      <section className="border-b border-black/10 bg-[#001531] text-white">
+        <div className="mx-auto grid max-w-[1200px] grid-cols-1 gap-10 px-5 py-20 sm:px-8 lg:grid-cols-12 lg:px-12 lg:py-24">
+          <div className="lg:col-span-6">
+            <BrandStripe className="mb-6" />
+            <h2 className="font-display text-4xl leading-tight tracking-[-0.01em] sm:text-5xl">
+              ¿Prefieres un acompañamiento personalizado?
+            </h2>
+            <p className="mt-5 max-w-xl leading-relaxed text-white/75">
+              Además de la membresía, el centro ofrece psicoterapia online 1 a 1 con un psicólogo especializado en
+              ansiedad: evaluación inicial, plan de intervención personalizado y técnicas prácticas para la ansiedad
+              y el pánico. También hay sesiones grupales.
+            </p>
+          </div>
+          <div className="flex flex-col justify-end gap-4 lg:col-span-5 lg:col-start-8">
+            <a
+              href={CLINIC.freeSession}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-13 items-center justify-center rounded-full bg-white px-7 text-[15px] font-semibold text-[#001531] transition-colors hover:bg-[#f3efe6]"
+            >
+              Agenda tu primera sesión gratis →
+            </a>
+            <a
+              href={CLINIC.whatsappTherapy}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-13 items-center justify-center rounded-full border border-white/30 px-7 text-[15px] font-semibold text-white transition-colors hover:border-white"
+            >
+              Escribir por WhatsApp · {CLINIC.phoneDisplay}
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* 9. Preguntas frecuentes */}
       <FAQSection />
     </>
   );

@@ -31,6 +31,10 @@ const faqs: FAQItem[] = [
     answer: 'No. Cada recurso está explicado con un lenguaje claro y práctico, pensado para cualquier persona que quiera herramientas para su día a día.',
   },
   {
+    question: '¿También puedo tener terapia individual?',
+    answer: 'Sí. El centro Libre de Ansiedad ofrece psicoterapia online 1 a 1 y sesiones grupales con psicólogos especializados en ansiedad. Puedes agendar tu primera sesión gratis o escribirnos por WhatsApp al +57 311 760 61 07.',
+  },
+  {
     question: '¿Desde qué países puedo suscribirme?',
     answer: 'Desde cualquier país. ePayco acepta tarjetas de crédito y débito internacionales y el cobro se hace en dólares (USD).',
   },
