@@ -14,6 +14,9 @@ import { cookies } from 'next/headers';
 import { CONTENT_CARD_COLUMNS, EPAYCO_PLAN_URL, MEMBERSHIP_PRICE_LABEL } from '@/lib/membership';
 import { toContentCard } from '@/lib/contentCards';
 import { CLINIC, CLINIC_STATS, CLINIC_TOPICS } from '@/lib/clinic';
+import { TestimonialCarousel } from '@/components/TestimonialCarousel';
+import { FEATURED_TESTIMONIALS, TESTIMONIALS } from '@/lib/testimonials';
+import { TEAM } from '@/lib/team';
 
 export const revalidate = 0;
 
@@ -242,7 +245,44 @@ export default async function Home() {
         </dl>
       </section>
 
-      {/* 8. Contenido reciente (desde Supabase) */}
+      {/* 8. Nuestro equipo (vista previa) */}
+      <section className="px-4 py-16 sm:px-6 lg:px-10 lg:py-24">
+        <div className="mx-auto max-w-[1240px]">
+          <Reveal className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
+            <SectionHeading
+              eyebrow="Nuestro equipo"
+              title="Psicólogos especializados en ansiedad"
+              text="Detrás de Libre de Ansiedad hay un equipo de psicólogas clínicas que acompaña a pacientes de distintos países."
+            />
+            <Link
+              href="/equipo"
+              className="inline-flex h-14 shrink-0 items-center gap-2 rounded-full border-2 border-ink/15 px-6 text-lg font-semibold text-ink hover:border-ink"
+            >
+              Conocer al equipo
+              <Icon name="arrow-right" className="h-5 w-5" />
+            </Link>
+          </Reveal>
+          <div className="mt-12 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+            {TEAM.map((m, i) => (
+              <Reveal key={m.id} delay={i * 80}>
+                <Link href={`/equipo#${m.id}`} className="group block">
+                  <div className="aspect-[4/5] overflow-hidden rounded-[1.5rem] bg-[#dfe7ee]">
+                    <img
+                      src={m.photo}
+                      alt={`Foto de ${m.name}`}
+                      className={`h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 ${m.founder ? 'object-[70%_center]' : 'object-top'}`}
+                    />
+                  </div>
+                  <p className="mt-4 text-lg font-semibold leading-tight text-ink group-hover:text-brand">{m.name}</p>
+                  <p className="mt-1 text-base leading-snug text-body">{m.role}</p>
+                </Link>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 9. Contenido reciente (desde Supabase) */}
       {contents.length > 0 && (
         <section id="cursos-destacados" className="px-4 py-16 sm:px-6 lg:px-10 lg:py-24">
           <div className="mx-auto max-w-[1240px]">
@@ -267,7 +307,29 @@ export default async function Home() {
         </section>
       )}
 
-      {/* 9. Precio */}
+      {/* 10. Testimonios */}
+      <section className="px-4 py-16 sm:px-6 lg:px-10 lg:py-24">
+        <div className="mx-auto max-w-[1240px]">
+          <Reveal className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
+            <SectionHeading
+              eyebrow="Historias reales"
+              title="Lo que dicen nuestros pacientes"
+            />
+            <Link
+              href="/testimonios"
+              className="inline-flex h-14 shrink-0 items-center gap-2 rounded-full border-2 border-ink/15 px-6 text-lg font-semibold text-ink hover:border-ink"
+            >
+              Ver los {TESTIMONIALS.length} testimonios
+              <Icon name="arrow-right" className="h-5 w-5" />
+            </Link>
+          </Reveal>
+          <Reveal delay={100} className="mt-12">
+            <TestimonialCarousel items={FEATURED_TESTIMONIALS} />
+          </Reveal>
+        </div>
+      </section>
+
+      {/* 11. Precio */}
       <section id="precio-membresia" className="scroll-mt-24 px-4 py-16 sm:px-6 lg:px-10 lg:py-24">
         <Reveal className="mx-auto max-w-[1040px]">
           <div className="overflow-hidden rounded-[2.5rem] bg-white shadow-[0_30px_80px_rgba(11,31,58,0.12)]">
@@ -318,7 +380,7 @@ export default async function Home() {
         </Reveal>
       </section>
 
-      {/* 10. Acompañamiento 1 a 1 (servicios reales del centro) */}
+      {/* 12. Acompañamiento 1 a 1 (servicios reales del centro) */}
       <section className="px-4 py-16 sm:px-6 lg:px-10 lg:py-20">
         <Reveal className="mx-auto grid max-w-[1240px] grid-cols-1 items-center gap-8 rounded-[2.5rem] border-2 border-ink/10 p-8 sm:p-12 lg:grid-cols-12 lg:p-14">
           <div className="lg:col-span-7">
@@ -354,7 +416,7 @@ export default async function Home() {
         </Reveal>
       </section>
 
-      {/* 11. Preguntas frecuentes */}
+      {/* 13. Preguntas frecuentes */}
       <FAQSection />
     </>
   );

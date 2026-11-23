@@ -2,7 +2,7 @@
 type IconName =
   | 'menu' | 'close' | 'arrow-right' | 'play' | 'headphones' | 'file' | 'book' | 'check' | 'lock'
   | 'user' | 'home' | 'grid' | 'school' | 'chat' | 'whatsapp' | 'search' | 'heart' | 'moon'
-  | 'wind' | 'brain' | 'sun' | 'pause' | 'refresh' | 'mail' | 'card' | 'logout' | 'key' | 'calendar' | 'spark';
+  | 'wind' | 'brain' | 'sun' | 'pause' | 'refresh' | 'mail' | 'card' | 'logout' | 'key' | 'calendar' | 'spark' | 'quote' | 'users' | 'plus' | 'minus';
 
 const paths: Record<IconName, React.ReactNode> = {
   menu: <path d="M4 7h16M4 12h16M4 17h16" />,
@@ -34,6 +34,10 @@ const paths: Record<IconName, React.ReactNode> = {
   key: <><circle cx="8" cy="15" r="4" /><path d="M11 12l9-9M17 6l3 3" /></>,
   calendar: <><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 10h18M8 3v4M16 3v4" /></>,
   spark: <path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3z" />,
+  quote: <path d="M9.5 6C6.5 7 5 9.5 5 13v5h5v-5H7.5c0-2.3 1-3.8 2.8-4.6L9.5 6zm9 0c-3 1-4.5 3.5-4.5 7v5h5v-5h-2.5c0-2.3 1-3.8 2.8-4.6L18.5 6z" fill="currentColor" stroke="none" />,
+  users: <><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20a6.5 6.5 0 0113 0" /><circle cx="17" cy="9" r="2.8" /><path d="M16 14.2a5 5 0 016 4.8" /></>,
+  plus: <path d="M12 5v14M5 12h14" />,
+  minus: <path d="M5 12h14" />,
 };
 
 export function Icon({ name, className = 'h-5 w-5', title }: { name: IconName; className?: string; title?: string }) {

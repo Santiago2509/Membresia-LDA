@@ -36,8 +36,8 @@ export function Footer() {
             <ul className="mt-4 space-y-2.5 text-sm text-white/80">
               <li><a href={CLINIC.website} target="_blank" rel="noopener noreferrer" className="hover:text-white">Sitio oficial</a></li>
               <li><a href={CLINIC.blog} target="_blank" rel="noopener noreferrer" className="hover:text-white">Blog</a></li>
-              <li><a href={CLINIC.testimonials} target="_blank" rel="noopener noreferrer" className="hover:text-white">Testimonios</a></li>
-              <li><a href={CLINIC.team} target="_blank" rel="noopener noreferrer" className="hover:text-white">Nuestro equipo</a></li>
+              <li><Link href="/testimonios" className="hover:text-white">Testimonios</Link></li>
+              <li><Link href="/equipo" className="hover:text-white">Nuestro equipo</Link></li>
             </ul>
           </div>
 
