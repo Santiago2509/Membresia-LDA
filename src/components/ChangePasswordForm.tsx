@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { createSupabaseBrowserClient } from '@/lib/supabase';
+import { Icon } from './ui/Icon';
 
 /** Formulario para que el suscriptor cambie la contraseña temporal que recibió por correo. */
 export default function ChangePasswordForm() {
@@ -47,11 +48,11 @@ export default function ChangePasswordForm() {
   };
 
   return (
-    <div className="bg-white rounded-3xl p-6 sm:p-8 border border-black/10 shadow-sm space-y-4">
+    <div className="space-y-4 rounded-[2rem] bg-white p-6 sm:p-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h4 className="font-bold text-neutral-900 text-sm">Contraseña</h4>
-          <p className="text-xs text-neutral-500">
+          <h2 className="text-xl font-semibold text-ink">Contraseña</h2>
+          <p className="text-base text-body">
             Cambia la contraseña temporal que recibiste por correo por una que recuerdes.
           </p>
         </div>
@@ -59,10 +60,10 @@ export default function ChangePasswordForm() {
           <button
             type="button"
             onClick={() => { setOpen(true); setSaved(false); }}
-            className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-neutral-100 hover:bg-neutral-200 text-[#001531] font-bold text-xs transition-colors shrink-0 w-full sm:w-auto cursor-pointer"
+            className="inline-flex h-12 w-full shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full bg-paper px-6 text-base font-semibold text-ink transition-colors hover:bg-ink/10 sm:w-auto"
           >
-            <span className="material-symbols-outlined text-[18px]">key</span>
-            <span>Cambiar contraseña</span>
+            <Icon name="key" className="h-5 w-5" />
+            Cambiar contraseña
           </button>
         )}
       </div>
@@ -79,7 +80,7 @@ export default function ChangePasswordForm() {
             <p className="sm:col-span-2 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</p>
           )}
           <label className="block">
-            <span className="text-xs font-semibold text-neutral-700">Nueva contraseña</span>
+            <span className="text-base font-semibold text-ink">Nueva contraseña</span>
             <input
               type="password"
               autoComplete="new-password"
@@ -87,11 +88,11 @@ export default function ChangePasswordForm() {
               minLength={8}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-1.5 w-full rounded-xl border border-black/15 px-4 py-3 text-sm outline-none focus:border-[#133a73] focus:ring-2 focus:ring-[#133a73]/15"
+              className="mt-1.5 w-full h-14 rounded-2xl border-2 border-ink/15 px-4 text-lg outline-none focus:border-[#133a73] focus:ring-2 focus:ring-[#133a73]/15"
             />
           </label>
           <label className="block">
-            <span className="text-xs font-semibold text-neutral-700">Repite la contraseña</span>
+            <span className="text-base font-semibold text-ink">Repite la contraseña</span>
             <input
               type="password"
               autoComplete="new-password"
@@ -99,21 +100,21 @@ export default function ChangePasswordForm() {
               minLength={8}
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
-              className="mt-1.5 w-full rounded-xl border border-black/15 px-4 py-3 text-sm outline-none focus:border-[#133a73] focus:ring-2 focus:ring-[#133a73]/15"
+              className="mt-1.5 w-full h-14 rounded-2xl border-2 border-ink/15 px-4 text-lg outline-none focus:border-[#133a73] focus:ring-2 focus:ring-[#133a73]/15"
             />
           </label>
           <div className="sm:col-span-2 flex flex-col sm:flex-row gap-3">
             <button
               type="submit"
               disabled={saving}
-              className="px-6 py-3 rounded-full bg-[#001531] hover:bg-[#133a73] text-white font-bold text-xs disabled:opacity-60 transition-colors cursor-pointer"
+              className="h-12 px-6 rounded-full bg-ink hover:bg-brand text-white font-semibold text-base disabled:opacity-60 transition-colors cursor-pointer"
             >
               {saving ? 'Guardando…' : 'Guardar nueva contraseña'}
             </button>
             <button
               type="button"
               onClick={() => { setOpen(false); setError(null); }}
-              className="px-6 py-3 rounded-full text-neutral-600 hover:bg-neutral-100 font-bold text-xs transition-colors cursor-pointer"
+              className="h-12 px-6 rounded-full text-body hover:bg-ink/5 font-semibold text-base transition-colors cursor-pointer"
             >
               Cancelar
             </button>

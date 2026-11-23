@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { BrandStripe } from './BrandStripe';
+import { SectionHeading } from './ui/SectionHeading';
+import { Icon } from './ui/Icon';
 
 interface FAQItem {
   question: string;
@@ -44,44 +45,54 @@ export function FAQSection() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
-    <section className="border-b border-black/10">
-      <div className="mx-auto grid max-w-[1200px] grid-cols-1 gap-12 px-5 py-20 sm:px-8 lg:grid-cols-12 lg:px-12 lg:py-28">
+    <section className="px-4 py-16 sm:px-6 lg:px-10 lg:py-24">
+      <div className="mx-auto grid max-w-[1240px] grid-cols-1 gap-12 lg:grid-cols-12">
         <div className="lg:col-span-4">
-          <BrandStripe className="mb-6" />
-          <h2 className="font-display text-4xl leading-tight tracking-[-0.01em] text-[#001531] sm:text-5xl">
-            Preguntas frecuentes
-          </h2>
-          <p className="mt-5 max-w-sm leading-relaxed text-neutral-600">
-            ¿Tienes otra duda?{' '}
-            <Link href="/contacto" className="font-semibold text-[#001531] underline underline-offset-4">
+          <SectionHeading eyebrow="Resolvemos tus dudas" title="Preguntas frecuentes" />
+          <p className="mt-6 max-w-sm text-lg leading-relaxed text-body">
+            ¿Tienes otra pregunta?{' '}
+            <Link href="/contacto" className="font-semibold text-ink underline underline-offset-4">
               Escríbenos
             </Link>
             .
           </p>
         </div>
 
-        <div className="divide-y divide-black/10 border-y border-black/10 lg:col-span-7 lg:col-start-6">
+        <div className="space-y-3 lg:col-span-8">
           {faqs.map((faq, index) => {
             const isOpen = openIndex === index;
             return (
-              <div key={faq.question}>
-                <button
-                  type="button"
-                  aria-expanded={isOpen}
-                  onClick={() => setOpenIndex(isOpen ? null : index)}
-                  className="flex w-full cursor-pointer items-start justify-between gap-6 py-6 text-left"
-                >
-                  <span className="text-lg font-semibold text-[#001531]">{faq.question}</span>
-                  <span
-                    aria-hidden="true"
-                    className={`mt-1 font-display text-2xl leading-none text-[#133a73] transition-transform duration-200 ${isOpen ? 'rotate-45' : ''}`}
+              <div
+                key={faq.question}
+                className={`rounded-2xl border-2 bg-white transition-colors ${isOpen ? 'border-ink/30' : 'border-transparent'}`}
+              >
+                <h3>
+                  <button
+                    type="button"
+                    aria-expanded={isOpen}
+                    aria-controls={`faq-${index}`}
+                    onClick={() => setOpenIndex(isOpen ? null : index)}
+                    className="flex w-full cursor-pointer items-center justify-between gap-6 px-6 py-5 text-left"
                   >
-                    +
-                  </span>
-                </button>
-                {isOpen && (
-                  <p className="max-w-2xl pb-7 pr-10 leading-relaxed text-neutral-600">{faq.answer}</p>
-                )}
+                    <span className="text-lg font-semibold text-ink sm:text-xl">{faq.question}</span>
+                    <span
+                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-all duration-300 ${
+                        isOpen ? 'rotate-45 bg-ink text-white' : 'bg-ink/5 text-ink'
+                      }`}
+                      aria-hidden="true"
+                    >
+                      <Icon name="close" className="h-5 w-5 rotate-45" />
+                    </span>
+                  </button>
+                </h3>
+                <div
+                  id={`faq-${index}`}
+                  className={`grid transition-all duration-300 ease-out ${isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}
+                >
+                  <div className="overflow-hidden">
+                    <p className="max-w-3xl px-6 pb-6 text-lg leading-relaxed text-body">{faq.answer}</p>
+                  </div>
+                </div>
               </div>
             );
           })}

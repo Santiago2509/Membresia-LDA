@@ -6,289 +6,192 @@ import { useEffect, useState } from 'react';
 import { createSupabaseBrowserClient } from '@/lib/supabase';
 import SignOutButton from '@/components/SignOutButton';
 import { EPAYCO_PLAN_URL } from '@/lib/membership';
+import { Icon, type IconName } from './ui/Icon';
+import { TextSizeControl } from './ui/TextSizeControl';
+
+const NAV: { href: string; label: string; icon: IconName; match: (p: string) => boolean }[] = [
+  { href: '/', label: 'Inicio', icon: 'home', match: (p) => p === '/' },
+  { href: '/catalogo', label: 'Catálogo', icon: 'grid', match: (p) => p.startsWith('/catalogo') },
+  { href: '/aula', label: 'Mi Aula', icon: 'school', match: (p) => p.startsWith('/aula') && !p.startsWith('/aula/perfil') },
+  { href: '/contacto', label: 'Contacto', icon: 'chat', match: (p) => p.startsWith('/contacto') },
+];
 
 export function Header() {
   const pathname = usePathname();
   const isHome = pathname === '/';
   const [isScrolled, setIsScrolled] = useState(false);
-  const [showButtons, setShowButtons] = useState(!isHome);
-  const [currentUser, setCurrentUser] = useState<any>(null);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [homeRevealed, setHomeRevealed] = useState(false);
+  const [currentUser, setCurrentUser] = useState<{ email?: string } | null>(null);
+  // El menú queda abierto solo en la página donde se abrió: al navegar se cierra solo
+  const [menuPath, setMenuPath] = useState<string | null>(null);
+  const menuOpen = menuPath === pathname;
+  const setMenuOpen = (open: boolean) => setMenuPath(open ? pathname : null);
+  const visible = !isHome || homeRevealed;
 
-  const epaycoPlanUrl = EPAYCO_PLAN_URL;
-
+  // Sesión activa
   useEffect(() => {
-    // Detectar sesión activa en Supabase
     try {
       const supabase = createSupabaseBrowserClient();
-      
-      supabase.auth.getSession().then(({ data }: { data: any }) => {
-        if (data?.session?.user) {
-          setCurrentUser(data.session.user);
-        }
+      supabase.auth.getUser().then(({ data }: { data: { user: { email?: string } | null } }) => {
+        setCurrentUser(data?.user ?? null);
       });
-
-      supabase.auth.getUser().then(({ data }: { data: any }) => {
-        if (data?.user) {
-          setCurrentUser(data.user);
-        }
-      });
-
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
-        setCurrentUser(session?.user || null);
-      });
-
-      return () => {
-        subscription.unsubscribe();
-      };
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(
+        (_event: string, session: { user?: { email?: string } } | null) => setCurrentUser(session?.user ?? null)
+      );
+      return () => subscription.unsubscribe();
     } catch (e) {
       console.error('Error al inicializar sesión en Header:', e);
     }
   }, []);
 
+  // En el inicio, el menú aparece cuando avanza la animación del logo o al bajar
   useEffect(() => {
-    if (!isHome) {
-      setShowButtons(true);
-      return;
-    }
-
-    // Inicialmente oculto en el home para dejar la primera mitad de la animación limpia
-    setShowButtons(false);
-
-    // Aparecer cuando la animación avance (~3.2 segundos)
-    const timer = setTimeout(() => {
-      setShowButtons(true);
-    }, 3200);
-
-    const handleScroll = () => {
-      const scrolled = window.scrollY > 80;
-      setIsScrolled(scrolled);
-      if (window.scrollY > 40) {
-        setShowButtons(true);
-      }
+    if (!isHome) return;
+    const show = () => setHomeRevealed(true);
+    const timer = setTimeout(show, 3200);
+    const onScroll = () => {
+      setIsScrolled(window.scrollY > 40);
+      if (window.scrollY > 40) setHomeRevealed(true);
     };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('lda_show_header', show);
     return () => {
       clearTimeout(timer);
-      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('lda_show_header', show);
     };
   }, [isHome]);
 
-  // Si no está en el home o ya hizo scroll, se activa el estilo tipo espejo glass
-  const isGlassActive = !isHome || isScrolled;
+  // Bloquear el scroll de la página mientras el menú está abierto
+  useEffect(() => {
+    document.body.style.overflow = menuOpen ? 'hidden' : '';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [menuOpen]);
 
-  // Determinar pestaña activa
-  const isInicio = pathname === '/';
-  const isCatalogo = pathname.startsWith('/catalogo');
-  const isAula = pathname.startsWith('/aula');
-  const isContacto = pathname.startsWith('/contacto');
+  if (pathname.startsWith('/admin')) return null;
+
+  const solid = !isHome || isScrolled || menuOpen;
 
   return (
-    <header 
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-700 ease-out transform ${
-        isGlassActive 
-          ? 'bg-[#e6e6e6]/80 backdrop-blur-2xl border-b border-black/10 shadow-[0_8px_32px_0_rgba(19,42,74,0.06)] opacity-100 translate-y-0 pointer-events-auto' 
-          : 'bg-transparent border-b border-transparent shadow-none'
-      } ${
-        !isGlassActive
-          ? showButtons 
-            ? 'opacity-100 translate-y-0 pointer-events-auto' 
-            : 'opacity-0 -translate-y-4 pointer-events-none'
-          : ''
-      }`}
+    <header
+      className={`fixed inset-x-0 top-0 z-50 transition-all duration-500 ${
+        solid ? 'border-b border-ink/10 bg-paper/95 backdrop-blur-md' : 'border-b border-transparent bg-transparent'
+      } ${visible ? 'translate-y-0 opacity-100' : 'pointer-events-none -translate-y-4 opacity-0'}`}
     >
-      <div className="h-20 max-w-[1280px] mx-auto px-6 lg:px-12 flex items-center justify-between gap-space-md">
-        
-        {/* Logo Icon Only */}
-        <div className="flex items-center gap-space-sm">
-          <Link href="/" className="flex items-center gap-2 focus:outline-none group" aria-label="Inicio">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#133a73] via-[#12a04a] to-[#2b93d1] p-0.5 shadow-sm group-hover:scale-105 transition-transform duration-200">
-              <div className="w-full h-full bg-white/90 backdrop-blur-sm rounded-[10px] flex items-center justify-center">
-                <span className="material-symbols-outlined text-[#133a73] text-[22px]">
-                  psychology
-                </span>
-              </div>
-            </div>
-          </Link>
-        </div>
+      <div className="mx-auto flex h-[76px] max-w-[1240px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-10">
+        {/* Logo */}
+        <Link href="/" className="flex shrink-0 items-center gap-3" aria-label="Libre de Ansiedad, ir al inicio">
+          <img src="/logo-mark.png" alt="" className="h-[40px] w-auto" />
+          <span className="hidden font-display text-[20px] leading-none whitespace-nowrap text-ink sm:block">
+            Libre de Ansiedad
+          </span>
+        </Link>
 
-        {/* Botones de navegación central (Inicio | Catálogo | Aula Virtual | Contacto) */}
-        <nav className="hidden md:flex items-center gap-1.5 p-1.5 rounded-full bg-black/5 backdrop-blur-md border border-black/5">
-          <Link 
-            href="/" 
-            className={`transition-all font-label-md text-xs sm:text-sm font-semibold rounded-full px-4 py-1.5 ${
-              isInicio 
-                ? 'bg-primary text-on-primary shadow-sm' 
-                : 'text-neutral-800 hover:text-primary hover:bg-black/5'
-            }`}
-          >
-            Inicio
-          </Link>
-
-          <Link 
-            href="/catalogo" 
-            className={`transition-all font-label-md text-xs sm:text-sm font-semibold rounded-full px-4 py-1.5 ${
-              isCatalogo 
-                ? 'bg-primary text-on-primary shadow-sm' 
-                : 'text-neutral-800 hover:text-primary hover:bg-black/5'
-            }`}
-          >
-            Catálogo
-          </Link>
-
-          <Link 
-            href="/aula" 
-            className={`transition-all font-label-md text-xs sm:text-sm font-semibold rounded-full px-4 py-1.5 flex items-center gap-1.5 ${
-              isAula 
-                ? 'bg-primary text-on-primary shadow-sm' 
-                : 'text-neutral-800 hover:text-primary hover:bg-black/5'
-            }`}
-          >
-            <span className="material-symbols-outlined text-[16px]">school</span>
-            <span>Aula Virtual</span>
-          </Link>
-
-          <Link 
-            href="/contacto" 
-            className={`transition-all font-label-md text-xs sm:text-sm font-semibold rounded-full px-4 py-1.5 ${
-              isContacto 
-                ? 'bg-primary text-on-primary shadow-sm' 
-                : 'text-neutral-800 hover:text-primary hover:bg-black/5'
-            }`}
-          >
-            Contacto
-          </Link>
+        {/* Navegación de escritorio */}
+        <nav aria-label="Principal" className="hidden items-center gap-1 lg:flex">
+          {NAV.map((item) => {
+            const active = item.match(pathname);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={active ? 'page' : undefined}
+                className={`relative rounded-full px-[16px] py-[8px] text-[17px] whitespace-nowrap font-semibold transition-colors ${
+                  active ? 'bg-ink text-white' : 'text-ink hover:bg-ink/5'
+                }`}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
         </nav>
 
-        {/* Botones de acción derecha */}
-        <div className="flex items-center gap-3">
-          
-          {currentUser ? (
-            <Link 
-              href="/aula" 
-              className={`font-label-md text-xs sm:text-sm font-bold transition-colors px-3.5 py-1.5 rounded-full hover:bg-black/5 hidden sm:inline-flex items-center gap-1.5 ${
-                isAula ? 'text-primary font-bold' : 'text-neutral-800 hover:text-primary'
-              }`}
+        {/* Acciones */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          <TextSizeControl className="hidden xl:flex" fixedSize />
+
+          <Link
+            href={currentUser ? '/aula/perfil' : '/login'}
+            className="hidden h-[44px] items-center gap-2 rounded-full px-[16px] text-[17px] whitespace-nowrap font-semibold text-ink transition-colors hover:bg-ink/5 md:inline-flex"
+          >
+            <Icon name="user" className="h-[20px] w-[20px]" />
+            {currentUser ? 'Mi perfil' : 'Ingresar'}
+          </Link>
+
+          {!currentUser && (
+            <Link
+              href={EPAYCO_PLAN_URL}
+              className="hidden h-[44px] items-center gap-2 rounded-full bg-ink px-[20px] text-[17px] whitespace-nowrap font-semibold text-white transition-colors hover:bg-brand sm:inline-flex"
             >
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span>Mi Aula</span>
-            </Link>
-          ) : (
-            <Link 
-              href="/login" 
-              className={`font-label-md text-sm font-semibold transition-colors px-3 py-1.5 rounded-full hover:bg-black/5 hidden sm:inline-block ${
-                pathname === '/login' ? 'text-primary font-bold' : 'text-neutral-800 hover:text-primary'
-              }`}
-            >
-              Iniciar sesión
+              Suscribirme
             </Link>
           )}
-          
-          {/* Botón directo al plan de membresía */}
-          <Link 
-            href={epaycoPlanUrl}
-            className="h-10 sm:h-11 px-4 sm:px-6 rounded-full bg-primary text-on-primary font-label-md text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 hover:bg-primary/90 transition-all shadow-md hover:-translate-y-0.5"
-          >
-            <span>Obtener Membresía</span>
-            <span className="material-symbols-outlined text-[16px]">credit_card</span>
-          </Link>
 
-          {/* Icono de Perfil */}
-          <Link 
-            href={currentUser ? "/aula/perfil" : "/login"} 
-            className="w-9 h-9 rounded-full bg-primary/10 hover:bg-primary text-primary hover:text-white transition-colors flex items-center justify-center shrink-0 border border-primary/20"
-            aria-label="Perfil de usuario"
-            title={currentUser ? "Mi Perfil & Membresía" : "Iniciar sesión"}
-          >
-            <span className="material-symbols-outlined text-[18px]">
-              {currentUser ? 'account_circle' : 'person'}
-            </span>
-          </Link>
-
-          {/* Menú móvil hamburguesa */}
           <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 rounded-xl text-neutral-800 hover:bg-black/5 focus:outline-none"
-            aria-label="Abrir menú de navegación"
+            type="button"
+            onClick={() => setMenuOpen(!menuOpen)}
+            aria-expanded={menuOpen}
+            aria-controls="menu-movil"
+            className="inline-flex h-[44px] cursor-pointer items-center gap-2 rounded-full border border-ink/15 bg-white px-4 text-[17px] whitespace-nowrap font-semibold text-ink lg:hidden"
           >
-            <span className="material-symbols-outlined text-[24px]">
-              {mobileMenuOpen ? 'close' : 'menu'}
-            </span>
+            <Icon name={menuOpen ? 'close' : 'menu'} className="h-[20px] w-[20px]" />
+            {menuOpen ? 'Cerrar' : 'Menú'}
           </button>
         </div>
-
       </div>
 
-      {/* Drawer Móvil */}
-      {mobileMenuOpen && (
-        <div className="md:hidden bg-white/95 backdrop-blur-2xl border-b border-black/10 px-6 py-6 space-y-4 shadow-xl animate-in slide-in-from-top-4 duration-200">
-          <nav className="flex flex-col space-y-2">
-            <Link 
-              href="/"
-              onClick={() => setMobileMenuOpen(false)}
-              className={`px-4 py-2.5 rounded-xl font-bold text-sm ${isInicio ? 'bg-primary text-white' : 'text-neutral-800 hover:bg-neutral-100'}`}
+      {/* Menú móvil a pantalla completa, con botones grandes */}
+      {menuOpen && (
+        <div id="menu-movil" className="h-[calc(100dvh-76px)] overflow-y-auto border-t border-ink/10 bg-paper px-4 pb-10 pt-6 sm:px-6 lg:hidden">
+          <nav aria-label="Menú" className="grid gap-2">
+            {NAV.map((item) => {
+              const active = item.match(pathname);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  aria-current={active ? 'page' : undefined}
+                  className={`flex items-center gap-4 rounded-2xl px-5 py-4 text-xl font-semibold ${
+                    active ? 'bg-ink text-white' : 'bg-white text-ink'
+                  }`}
+                >
+                  <Icon name={item.icon} className="h-6 w-6" />
+                  {item.label}
+                </Link>
+              );
+            })}
+            <Link
+              href={currentUser ? '/aula/perfil' : '/login'}
+              className="flex items-center gap-4 rounded-2xl bg-white px-5 py-4 text-xl font-semibold text-ink"
             >
-              Inicio
-            </Link>
-            <Link 
-              href="/catalogo"
-              onClick={() => setMobileMenuOpen(false)}
-              className={`px-4 py-2.5 rounded-xl font-bold text-sm ${isCatalogo ? 'bg-primary text-white' : 'text-neutral-800 hover:bg-neutral-100'}`}
-            >
-              Catálogo de Lecciones
-            </Link>
-            <Link 
-              href="/aula"
-              onClick={() => setMobileMenuOpen(false)}
-              className={`px-4 py-2.5 rounded-xl font-bold text-sm flex items-center justify-between ${isAula ? 'bg-primary text-white' : 'text-neutral-800 hover:bg-neutral-100'}`}
-            >
-              <span>Aula Virtual (Miembros)</span>
-              <span className="material-symbols-outlined text-[18px]">school</span>
-            </Link>
-            {currentUser && (
-              <Link 
-                href="/aula/perfil"
-                onClick={() => setMobileMenuOpen(false)}
-                className="px-4 py-2.5 rounded-xl font-bold text-sm flex items-center justify-between text-neutral-800 hover:bg-neutral-100"
-              >
-                <span>Mi Perfil & Vencimiento</span>
-                <span className="material-symbols-outlined text-[18px] text-amber-600">badge</span>
-              </Link>
-            )}
-            <Link 
-              href="/contacto"
-              onClick={() => setMobileMenuOpen(false)}
-              className={`px-4 py-2.5 rounded-xl font-bold text-sm ${isContacto ? 'bg-primary text-white' : 'text-neutral-800 hover:bg-neutral-100'}`}
-            >
-              Contacto
+              <Icon name="user" className="h-6 w-6" />
+              {currentUser ? 'Mi perfil y suscripción' : 'Ingresar a mi cuenta'}
             </Link>
           </nav>
 
-          <div className="pt-4 border-t border-black/10 flex flex-col gap-2">
+          <div className="mt-8 rounded-2xl bg-white p-5">
+            <p className="text-base font-semibold text-ink">Tamaño de letra</p>
+            <p className="mt-1 text-sm text-body">Agranda el texto si te cuesta leer.</p>
+            <TextSizeControl className="mt-4 w-fit" />
+          </div>
+
+          <div className="mt-8 grid gap-3">
             {currentUser ? (
-              <>
-                <Link 
-                  href="/aula"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="w-full py-3 rounded-full bg-[#001531] text-white text-center font-bold text-sm shadow-sm"
-                >
-                  Mi Aula Virtual
-                </Link>
-                <SignOutButton 
-                  type="member"
-                  className="w-full py-2.5 rounded-full bg-red-50 text-red-700 text-center font-bold text-xs hover:bg-red-100 border border-red-200"
-                >
-                  Cerrar Sesión
-                </SignOutButton>
-              </>
-            ) : (
-              <Link 
-                href="/login"
-                onClick={() => setMobileMenuOpen(false)}
-                className="w-full py-3 rounded-full bg-neutral-100 text-neutral-800 text-center font-bold text-sm hover:bg-neutral-200"
+              <SignOutButton
+                type="member"
+                className="flex h-14 w-full items-center justify-center gap-2 rounded-full border border-red-200 bg-red-50 text-lg font-semibold text-red-700"
               >
-                Iniciar Sesión
+                Cerrar sesión
+              </SignOutButton>
+            ) : (
+              <Link
+                href={EPAYCO_PLAN_URL}
+                className="flex h-14 w-full items-center justify-center gap-2 rounded-full bg-ink text-lg font-semibold text-white"
+              >
+                Suscribirme a la membresía
+                <Icon name="arrow-right" className="h-5 w-5" />
               </Link>
             )}
           </div>

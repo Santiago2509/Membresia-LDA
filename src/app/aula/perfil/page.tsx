@@ -4,6 +4,7 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import Link from 'next/link';
 import SignOutButton from '@/components/SignOutButton';
 import ChangePasswordForm from '@/components/ChangePasswordForm';
+import { Icon } from '@/components/ui/Icon';
 import { EPAYCO_PLAN_URL, MEMBERSHIP_PRICE_LABEL } from '@/lib/membership';
 import { format, differenceInDays } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -28,19 +29,17 @@ export default async function PerfilPage() {
 
   if (!user) {
     return (
-      <div className="max-w-md mx-auto py-20 px-4 text-center space-y-6">
-        <div className="w-16 h-16 rounded-full bg-neutral-100 flex items-center justify-center mx-auto text-[#133a73]">
-          <span className="material-symbols-outlined text-[32px]">lock</span>
-        </div>
-        <h2 className="text-xl font-bold text-[#001531]">Inicia sesión para ver tu perfil</h2>
-        <p className="text-neutral-600 text-sm">
-          Debes acceder con tus credenciales de suscriptor para consultar tus datos y fecha de vigencia.
-        </p>
+      <div className="mx-auto max-w-md space-y-6 py-16 text-center">
+        <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-brand/10 text-brand">
+          <Icon name="lock" className="h-8 w-8" />
+        </span>
+        <h1 className="font-display text-3xl text-ink">Inicia sesión para ver tu perfil</h1>
+        <p className="text-lg text-body">Entra con tu correo y contraseña para ver tus datos y la fecha de tu membresía.</p>
         <Link
           href="/login?redirect=/aula/perfil"
-          className="inline-block px-7 py-3 rounded-full bg-[#133a73] text-white font-bold text-sm shadow-md hover:bg-[#001531] transition-all"
+          className="inline-flex h-14 items-center justify-center rounded-full bg-ink px-8 text-lg font-semibold text-white hover:bg-brand"
         >
-          Iniciar Sesión
+          Iniciar sesión
         </Link>
       </div>
     );
@@ -74,156 +73,86 @@ export default async function PerfilPage() {
 
   const epaycoPlanUrl = EPAYCO_PLAN_URL;
 
+  const active = isActive && !isExpired;
+
   return (
-    <div className="max-w-3xl mx-auto space-y-8 pb-20">
-      
-      {/* Encabezado */}
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <span className="text-xs font-bold uppercase tracking-wider text-[#133a73] bg-[#133a73]/10 px-3 py-1 rounded-full">
-            Panel de Usuario
+    <div className="mx-auto max-w-3xl space-y-6 pb-20">
+      <header className="pb-2">
+        <h1 className="font-display text-4xl text-ink sm:text-5xl">Mi perfil</h1>
+        <p className="mt-3 text-lg text-body">Tus datos, el estado de tu membresía y tu contraseña.</p>
+      </header>
+
+      {/* Datos */}
+      <section className="flex items-center gap-5 rounded-[2rem] bg-white p-6 sm:p-8">
+        <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-brand text-2xl font-semibold text-white">
+          {displayName.slice(0, 2).toUpperCase()}
+        </span>
+        <div className="min-w-0">
+          <p className="truncate font-display text-2xl text-ink">{displayName}</p>
+          <p className="truncate text-lg text-body">{email}</p>
+        </div>
+      </section>
+
+      {/* Membresía */}
+      <section className="space-y-6 rounded-[2rem] bg-white p-6 sm:p-8">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="font-display text-2xl text-ink">Mi membresía</h2>
+          <span
+            className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-base font-semibold ${
+              active ? 'bg-calm/15 text-[#0b7a37]' : 'bg-sun/25 text-[#8a5a12]'
+            }`}
+          >
+            <span className={`h-2.5 w-2.5 rounded-full ${active ? 'bg-calm' : 'bg-[#b9771f]'}`} />
+            {active ? 'Activa' : 'Vencida o inactiva'}
           </span>
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#001531] mt-2">
-            Mi Perfil & Membresía
-          </h1>
-          <p className="text-neutral-600 text-sm">
-            Consulta el estado de tu cuenta, tu suscripción y tu periodo de acceso.
-          </p>
         </div>
 
-        <Link
-          href="/aula"
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white border border-black/10 text-neutral-700 hover:text-neutral-900 transition-colors shadow-sm text-xs font-bold shrink-0"
-        >
-          <span className="material-symbols-outlined text-[16px]">arrow_back</span>
-          <span>Volver al Aula</span>
-        </Link>
-      </div>
-
-      {/* Tarjeta 1: Información Personal */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-black/10 shadow-sm space-y-6">
-        <div className="flex items-center gap-4 pb-6 border-b border-black/5">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#133a73] to-[#2b93d1] flex items-center justify-center text-white font-bold text-2xl shadow-md">
-            {displayName.slice(0, 2).toUpperCase()}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="rounded-2xl bg-paper p-5">
+            <p className="text-base text-body">Inicio del periodo</p>
+            <p className="mt-1 text-xl font-semibold text-ink first-letter:uppercase">{formattedPeriodStart}</p>
           </div>
-          <div>
-            <h2 className="text-lg font-bold text-neutral-900">{displayName}</h2>
-            <p className="text-sm text-neutral-500">{email}</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-          <div className="p-4 rounded-2xl bg-neutral-50 border border-black/5 space-y-1">
-            <span className="text-xs text-neutral-400 font-bold uppercase tracking-wider">
-              Nombre de Suscriptor
-            </span>
-            <p className="font-bold text-neutral-800">{displayName}</p>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-neutral-50 border border-black/5 space-y-1">
-            <span className="text-xs text-neutral-400 font-bold uppercase tracking-wider">
-              Correo Electrónico
-            </span>
-            <p className="font-bold text-neutral-800 truncate">{email}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Tarjeta 2: Estado de la Suscripción & Vencimiento */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-black/10 shadow-sm space-y-6">
-        <div className="flex items-center justify-between gap-4 pb-6 border-b border-black/5">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center">
-              <span className="material-symbols-outlined text-[22px]">workspace_premium</span>
-            </div>
-            <div>
-              <h3 className="font-bold text-neutral-900">Estado de tu Suscripción</h3>
-              <p className="text-xs text-neutral-500">Gestión de periodos y vigencia</p>
-            </div>
-          </div>
-
-          {isActive && !isExpired ? (
-            <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 font-bold text-xs flex items-center gap-1.5 shadow-sm">
-              <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
-              <span>Activa y al día</span>
-            </span>
-          ) : (
-            <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-900 font-bold text-xs flex items-center gap-1.5 shadow-sm">
-              <span className="w-2 h-2 rounded-full bg-amber-600" />
-              <span>Vencida o Inactiva</span>
-            </span>
-          )}
-        </div>
-
-        {/* Fechas de suscripción */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="p-5 rounded-2xl bg-[#133a73]/5 border border-[#133a73]/15 space-y-1">
-            <span className="text-xs text-[#133a73] font-bold uppercase tracking-wider flex items-center gap-1">
-              <span className="material-symbols-outlined text-[15px]">event_available</span>
-              <span>Fecha de Inicio</span>
-            </span>
-            <p className="text-base font-bold text-neutral-800 capitalize">
-              {formattedPeriodStart}
-            </p>
-          </div>
-
-          <div className="p-5 rounded-2xl bg-amber-50/70 border border-amber-200/60 space-y-1">
-            <span className="text-xs text-amber-900 font-bold uppercase tracking-wider flex items-center gap-1">
-              <span className="material-symbols-outlined text-[15px]">event_repeat</span>
-              <span>Fecha de Vencimiento / Renovación</span>
-            </span>
-            <p className="text-base font-bold text-neutral-900 capitalize">
-              {formattedPeriodEnd}
-            </p>
-            {isActive && !isExpired && daysLeft >= 0 && (
-              <p className="text-xs text-emerald-700 font-medium pt-1">
-                Te quedan {daysLeft} días de acceso activo este ciclo.
+          <div className={`rounded-2xl p-5 ${active ? 'bg-calm/10' : 'bg-sun/15'}`}>
+            <p className="text-base text-body">{active ? 'Tienes acceso hasta' : 'Venció el'}</p>
+            <p className="mt-1 text-xl font-semibold text-ink first-letter:uppercase">{formattedPeriodEnd}</p>
+            {active && daysLeft >= 0 && (
+              <p className="mt-1 text-base text-[#0b7a37]">
+                {daysLeft === 1 ? 'Te queda 1 día' : `Te quedan ${daysLeft} días`}
               </p>
             )}
           </div>
         </div>
 
-        {/* Información del plan */}
-        <div className="p-4 rounded-2xl bg-neutral-50 border border-black/5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs text-neutral-600">
-          <div>
-            <p className="font-bold text-neutral-800">Plan de Membresía Libre de Ansiedad ({MEMBERSHIP_PRICE_LABEL}/mes)</p>
-            <p className="text-neutral-500 mt-0.5">
-              Procesado de forma segura mediante ePayco Suscripciones.
-            </p>
-          </div>
+        <p className="text-base leading-relaxed text-body">
+          Membresía Libre de Ansiedad ({MEMBERSHIP_PRICE_LABEL}/mes). Se renueva automáticamente con ePayco; cuando se
+          cobra la renovación, tu fecha de acceso se actualiza sola.
+        </p>
 
-          {(!isActive || isExpired) && (
-            <Link
-              href={epaycoPlanUrl}
-              className="px-5 py-2.5 rounded-full bg-amber-400 hover:bg-amber-300 text-neutral-900 font-bold shadow-sm transition-all shrink-0"
-            >
-              Renovar Membresía
-            </Link>
-          )}
-        </div>
-      </div>
+        {!active && (
+          <Link
+            href={epaycoPlanUrl}
+            className="inline-flex h-14 w-full items-center justify-center rounded-full bg-ink px-8 text-lg font-semibold text-white hover:bg-brand sm:w-auto"
+          >
+            Renovar membresía
+          </Link>
+        )}
+      </section>
 
-      {/* Tarjeta 3: Cambio de contraseña */}
       <ChangePasswordForm />
 
-      {/* Tarjeta 4: Acciones y Cierre de Sesión */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-black/10 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+      <section className="flex flex-col items-start justify-between gap-4 rounded-[2rem] bg-white p-6 sm:flex-row sm:items-center sm:p-8">
         <div>
-          <h4 className="font-bold text-neutral-900 text-sm">¿Deseas cerrar tu sesión?</h4>
-          <p className="text-xs text-neutral-500">
-            Puedes desconectarte de forma segura. Podrás volver a entrar con tus credenciales cuando desees.
-          </p>
+          <h2 className="text-xl font-semibold text-ink">Cerrar sesión</h2>
+          <p className="text-base text-body">Puedes volver a entrar cuando quieras con tu correo y contraseña.</p>
         </div>
-
         <SignOutButton
           type="member"
-          className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-red-50 text-red-700 hover:bg-red-600 hover:text-white font-bold text-xs transition-all border border-red-200/60 shadow-sm hover:shadow-md shrink-0 w-full sm:w-auto"
+          className="inline-flex h-12 w-full shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full border-2 border-red-200 bg-red-50 px-6 text-base font-semibold text-red-700 hover:bg-red-100 sm:w-auto"
         >
-          <span className="material-symbols-outlined text-[18px]">logout</span>
-          <span>Cerrar Sesión</span>
+          <Icon name="logout" className="h-5 w-5" />
+          Cerrar sesión
         </SignOutButton>
-      </div>
-
+      </section>
     </div>
   );
 }

@@ -1,8 +1,8 @@
-import Link from 'next/link';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import SidebarProfile from '@/components/SidebarProfile';
+import { AulaNavLinks } from '@/components/AulaNavLinks';
 import { isAdminEmail, isMembershipActive } from '@/lib/membership';
 
 export const dynamic = 'force-dynamic';
@@ -58,61 +58,14 @@ export default async function AulaLayout({ children }: { children: React.ReactNo
   }
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen bg-[#e6e6e6] font-body-md text-on-surface pt-20">
-      
-      {/* Sidebar - Navegación Limpia y Sin Enlaces Rotos */}
-      <aside className="w-full md:w-72 bg-white/80 backdrop-blur-xl border-r border-black/8 flex flex-col justify-between hidden md:flex shrink-0 pt-6 pb-6 h-[calc(100vh-5rem)] sticky top-20 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
-        
-        <div className="flex-1 px-4 space-y-2 overflow-y-auto">
-          <div className="px-3 pb-3 mb-2 border-b border-black/5">
-            <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">
-              Navegación del Aula
-            </span>
-          </div>
-
-          <Link 
-            href="/aula" 
-            className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-[#001531] text-white font-label-md text-xs font-bold transition-all shadow-sm"
-          >
-            <span className="material-symbols-outlined text-[20px]">space_dashboard</span>
-            <span>Mi Aula Virtual</span>
-          </Link>
-
-          <Link 
-            href="/catalogo" 
-            className="flex items-center gap-3 px-4 py-3 rounded-2xl text-neutral-700 hover:bg-neutral-100 font-label-md text-xs font-bold transition-all"
-          >
-            <span className="material-symbols-outlined text-[20px] text-[#133a73]">local_library</span>
-            <span>Catálogo Completo</span>
-          </Link>
-
-          <Link 
-            href="/contacto" 
-            className="flex items-center gap-3 px-4 py-3 rounded-2xl text-neutral-700 hover:bg-neutral-100 font-label-md text-xs font-bold transition-all"
-          >
-            <span className="material-symbols-outlined text-[20px] text-[#12a04a]">support_agent</span>
-            <span>Soporte & Contacto</span>
-          </Link>
-
-          <Link 
-            href="/aula/perfil" 
-            className="flex items-center gap-3 px-4 py-3 rounded-2xl text-neutral-700 hover:bg-neutral-100 font-label-md text-xs font-bold transition-all"
-          >
-            <span className="material-symbols-outlined text-[20px] text-amber-600">badge</span>
-            <span>Mi Perfil & Suscripción</span>
-          </Link>
-
-          <Link 
-            href="/" 
-            className="flex items-center gap-3 px-4 py-3 rounded-2xl text-neutral-700 hover:bg-neutral-100 font-label-md text-xs font-bold transition-all"
-          >
-            <span className="material-symbols-outlined text-[20px] text-neutral-500">home</span>
-            <span>Volver a la Portada</span>
-          </Link>
-        </div>
-        
-        {/* Perfil Real del Usuario Logueado con recuperación automática de sesión */}
-        <SidebarProfile 
+    <div className="flex min-h-screen flex-col bg-paper pt-[4.75rem] md:flex-row">
+      {/* Menú lateral del aula (escritorio) */}
+      <aside className="sticky top-[4.75rem] hidden h-[calc(100vh-4.75rem)] w-72 shrink-0 flex-col justify-between border-r border-ink/10 bg-white py-6 md:flex">
+        <nav aria-label="Aula" className="flex-1 space-y-1.5 overflow-y-auto px-4">
+          <p className="px-3 pb-3 text-sm font-semibold uppercase tracking-[0.16em] text-body">Mi aula</p>
+          <AulaNavLinks />
+        </nav>
+        <SidebarProfile
           initialUser={user}
           initialDisplayName={displayName}
           initialInitials={initials}
@@ -120,13 +73,14 @@ export default async function AulaLayout({ children }: { children: React.ReactNo
         />
       </aside>
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 relative">
-        <main className="flex-1 p-4 sm:p-6 md:p-10 relative z-10 overflow-y-auto">
-          {children}
-        </main>
+      {/* Navegación del aula (celular): botones grandes arriba del contenido */}
+      <nav aria-label="Aula" className="flex gap-2 overflow-x-auto border-b border-ink/10 bg-white px-4 py-3 md:hidden">
+        <AulaNavLinks compact />
+      </nav>
+
+      <div className="relative flex min-w-0 flex-1 flex-col">
+        <main className="relative z-10 flex-1 p-4 sm:p-6 md:p-10">{children}</main>
       </div>
-      
     </div>
   );
 }

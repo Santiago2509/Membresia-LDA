@@ -2,52 +2,60 @@ import { AnimatedLogoIntro } from '@/components/AnimatedLogoIntro';
 import { Hero } from '@/components/Hero';
 import { FAQSection } from '@/components/FAQSection';
 import Link from 'next/link';
-import { CheckoutButton } from '@/components/CheckoutButton';
 import ContentCard from '@/components/ContentCard';
-import { BrandStripe } from '@/components/BrandStripe';
+import { BreathingExercise } from '@/components/BreathingExercise';
+import { SituationPicker } from '@/components/SituationPicker';
+import { Reveal } from '@/components/ui/Reveal';
+import { CountUp } from '@/components/ui/CountUp';
+import { Icon, type IconName } from '@/components/ui/Icon';
+import { SectionHeading } from '@/components/ui/SectionHeading';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
-import { CONTENT_CARD_COLUMNS, MEMBERSHIP_PRICE_LABEL } from '@/lib/membership';
+import { CONTENT_CARD_COLUMNS, EPAYCO_PLAN_URL, MEMBERSHIP_PRICE_LABEL } from '@/lib/membership';
 import { toContentCard } from '@/lib/contentCards';
 import { CLINIC, CLINIC_STATS, CLINIC_TOPICS } from '@/lib/clinic';
 
 export const revalidate = 0;
 
-const steps = [
-  {
-    title: 'Te suscribes con ePayco',
-    text: 'Pagas con tarjeta de forma segura. El cobro se renueva cada mes y puedes cancelarlo cuando quieras.',
-  },
-  {
-    title: 'Recibes tu acceso por correo',
-    text: 'En pocos minutos te llega un correo con tu usuario y una contraseña temporal, que puedes cambiar desde tu perfil.',
-  },
-  {
-    title: 'Entras al aula y avanzas a tu ritmo',
-    text: 'Todo el material queda disponible mientras tu membresía esté activa, desde el celular o el computador.',
-  },
-];
-
-const formats = [
+const formats: { name: string; icon: IconName; color: string; text: string }[] = [
   {
     name: 'Videos',
+    icon: 'play',
     color: '#2b93d1',
     text: 'Clases en las que Nelson explica qué pasa en tu cuerpo y en tu mente con la ansiedad, y cómo intervenir.',
   },
   {
     name: 'Audios guiados',
+    icon: 'headphones',
     color: '#12a04a',
     text: 'Ejercicios de respiración y de aterrizaje para usar en el momento en que la ansiedad sube.',
   },
   {
     name: 'Guías en PDF',
+    icon: 'file',
     color: '#eeab52',
-    text: 'Hojas de trabajo y registros para practicar entre una lección y otra.',
+    text: 'Hojas de trabajo y registros para practicar entre una lección y otra. Puedes descargarlas e imprimirlas.',
   },
   {
     name: 'Artículos',
+    icon: 'book',
     color: '#d6006f',
     text: 'Lecturas cortas para entender y repasar los conceptos clave cuando lo necesites.',
+  },
+];
+
+const steps = [
+  {
+    title: 'Te suscribes',
+    text: 'Pagas con tarjeta de forma segura en ePayco. El cobro se renueva cada mes y puedes cancelarlo cuando quieras.',
+  },
+  {
+    title: 'Recibes tu acceso',
+    text: 'En pocos minutos te llega un correo con tu usuario y una contraseña temporal. Revisa también la carpeta de spam.',
+  },
+  {
+    title: 'Entras y avanzas',
+    text: 'Ingresas a tu Aula Virtual desde el celular o el computador y avanzas a tu ritmo, cuando quieras.',
   },
 ];
 
@@ -55,8 +63,11 @@ const priceIncludes = [
   'Acceso a todo el material del aula',
   'Contenido nuevo a medida que se publica',
   'Guías descargables en PDF',
+  'Desde el celular o el computador',
   'Sin permanencia: cancelas cuando quieras',
 ];
+
+const LOGO_COLORS = ['#12a04a', '#8dc42a', '#eeab52', '#ec6f31', '#e8363b', '#d6006f', '#b0106a', '#2b93d1', '#133a73'];
 
 export default async function Home() {
   const cookieStore = await cookies();
@@ -88,216 +99,262 @@ export default async function Home() {
       {/* 2. Presentación */}
       <Hero />
 
-      {/* 3. Quién soy (texto real de la web oficial) */}
-      <section id="quien-soy" className="border-b border-black/10">
-        <div className="mx-auto grid max-w-[1200px] grid-cols-1 gap-12 px-5 py-20 sm:px-8 lg:grid-cols-12 lg:gap-16 lg:px-12 lg:py-28">
-          <div className="lg:col-span-5">
+      {/* 3. Ejercicio de respiración interactivo */}
+      <section id="respira" className="scroll-mt-24 px-4 py-16 sm:px-6 lg:px-10 lg:py-24">
+        <Reveal className="mx-auto max-w-[1240px]">
+          <BreathingExercise />
+        </Reveal>
+      </section>
+
+      {/* 4. ¿Qué te está pasando? (interactivo) */}
+      <section className="px-4 py-16 sm:px-6 lg:px-10 lg:py-24">
+        <div className="mx-auto max-w-[1240px]">
+          <Reveal>
+            <SectionHeading
+              eyebrow="Encuentra tu punto de partida"
+              title="¿Qué te está pasando?"
+              text="Toca la opción que más se parece a lo que vives y mira cómo te ayuda la membresía."
+            />
+          </Reveal>
+          <Reveal delay={100} className="mt-12">
+            <SituationPicker />
+          </Reveal>
+        </div>
+      </section>
+
+      {/* 5. Qué incluye */}
+      <section id="que-incluye" className="scroll-mt-24 px-4 py-16 sm:px-6 lg:px-10 lg:py-24">
+        <div id="membresia-exclusiva" className="mx-auto max-w-[1240px]">
+          <Reveal>
+            <SectionHeading
+              eyebrow="Qué incluye"
+              title="Material para los momentos difíciles y para el trabajo de fondo"
+            />
+          </Reveal>
+          <div className="mt-12 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {formats.map((f, i) => (
+              <Reveal key={f.name} delay={i * 90} className="h-full">
+                <div className="group h-full rounded-[1.75rem] bg-white p-7 shadow-[0_10px_40px_rgba(11,31,58,0.06)] transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_24px_60px_rgba(11,31,58,0.12)]">
+                  <span
+                    className="flex h-14 w-14 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110"
+                    style={{ backgroundColor: `${f.color}1f`, color: f.color }}
+                  >
+                    <Icon name={f.icon} className="h-7 w-7" />
+                  </span>
+                  <h3 className="mt-6 font-display text-2xl text-ink">{f.name}</h3>
+                  <p className="mt-3 text-lg leading-relaxed text-body">{f.text}</p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 6. Cómo funciona */}
+      <section className="px-4 py-16 sm:px-6 lg:px-10 lg:py-24">
+        <div className="mx-auto max-w-[1240px] rounded-[2.5rem] bg-ink px-6 py-14 text-white sm:px-10 lg:px-16 lg:py-20">
+          <Reveal>
+            <SectionHeading
+              eyebrow="Cómo funciona"
+              title="Tres pasos y estás dentro"
+              text="Todo es automático. No tienes que esperar a que alguien te habilite."
+              tone="dark"
+            />
+          </Reveal>
+          <div className="relative mt-14">
+          <div aria-hidden="true" className="absolute left-7 right-7 top-7 hidden h-px bg-white/20 md:block" />
+          <ol className="relative grid grid-cols-1 gap-10 md:grid-cols-3 md:gap-8">
+            {steps.map((step, i) => (
+              <Reveal as="li" key={step.title} delay={i * 120} className="relative">
+                <span className="relative z-10 flex h-14 w-14 items-center justify-center rounded-full bg-white font-display text-2xl text-ink">
+                  {i + 1}
+                </span>
+                <h3 className="mt-6 font-display text-2xl">{step.title}</h3>
+                <p className="mt-3 max-w-sm text-lg leading-relaxed text-white/75">{step.text}</p>
+              </Reveal>
+            ))}
+          </ol>
+          </div>
+          <Reveal delay={200} className="mt-14">
+            <Link
+              href={EPAYCO_PLAN_URL}
+              className="group inline-flex h-16 w-full items-center justify-center gap-3 rounded-full bg-white px-8 text-lg font-semibold text-ink transition-colors hover:bg-sun sm:w-auto"
+            >
+              Empezar ahora
+              <Icon name="arrow-right" className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+            </Link>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* 7. Quién soy (texto real de la web oficial) */}
+      <section id="quien-soy" className="scroll-mt-24 px-4 py-16 sm:px-6 lg:px-10 lg:py-24">
+        <div className="mx-auto grid max-w-[1240px] grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-16">
+          <Reveal className="lg:col-span-5">
             <div className="relative overflow-hidden rounded-[2rem] bg-[#d9d9d6]">
               <img
                 src="/nelson-quien-soy.jpg"
                 alt="Psic. Nelson Arturo"
                 className="aspect-[4/5] w-full object-cover object-[70%_center]"
               />
-              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#001531]/85 to-transparent p-6 pt-20 text-white">
-                <p className="font-display text-2xl">Nelson Arturo</p>
-                <p className="text-sm text-white/80">Psicólogo especialista en ansiedad</p>
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ink/90 to-transparent p-7 pt-24 text-white">
+                <p className="font-display text-3xl">Nelson Arturo</p>
+                <p className="mt-1 text-base text-white/85">Psicólogo especialista en ansiedad</p>
               </div>
             </div>
-          </div>
+          </Reveal>
 
-          <div className="flex flex-col justify-center lg:col-span-7">
-            <BrandStripe className="mb-6" />
-            <p className="mb-5 text-xs font-semibold uppercase tracking-[0.2em] text-[#133a73]">Quién soy</p>
-            <blockquote className="font-display text-[1.75rem] leading-snug text-[#001531] sm:text-[2.1rem]">
+          <Reveal delay={120} className="flex flex-col justify-center lg:col-span-7">
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-calm">Quién soy</p>
+            <blockquote className="mt-5 font-display text-[1.85rem] leading-snug text-ink sm:text-[2.3rem]">
               “Soy psicólogo, especialista en el tratamiento de la ansiedad, pero también fui uno de los afectados.
               Quiero ayudarte a que seas una persona mucho más fuerte, inteligente y calmada para que seas libre y
               reemprendas tus sueños.”
             </blockquote>
-            <p className="mt-8 max-w-2xl leading-relaxed text-neutral-700">
-              {CLINIC.name} es un centro de psicología online conformado por un equipo de psicólogos clínicos
-              especializados en ansiedad, estrés y trastornos emocionales. Trabajamos con Terapia
-              Cognitivo-Conductual (TCC) y otras metodologías validadas por la ciencia, sin medicamentos. Esta
-              membresía reúne ese trabajo en videos, audios y guías que puedes usar a tu ritmo.
+            <p className="mt-8 max-w-2xl text-lg leading-relaxed text-body">
+              {CLINIC.name} es un centro de psicología online con un equipo de psicólogos clínicos especializados en
+              ansiedad, estrés y trastornos emocionales. Trabajamos con Terapia Cognitivo-Conductual (TCC) y otras
+              metodologías validadas por la ciencia, sin medicamentos.
             </p>
-            <ul className="mt-8 flex flex-wrap gap-2">
+            <ul className="mt-8 flex flex-wrap gap-2.5" aria-label="Áreas que trabaja el centro">
               {CLINIC_TOPICS.map((topic) => (
-                <li key={topic} className="rounded-full border border-black/15 px-3.5 py-1.5 text-sm text-neutral-700">
+                <li key={topic} className="rounded-full bg-white px-4 py-2 text-base text-ink shadow-[0_2px_10px_rgba(11,31,58,0.05)]">
                   {topic}
                 </li>
               ))}
             </ul>
-          </div>
+          </Reveal>
         </div>
 
-        {/* Cifras publicadas por el centro */}
-        <div className="border-t border-black/10">
-          <dl className="mx-auto grid max-w-[1200px] grid-cols-2 gap-y-10 px-5 py-12 sm:px-8 lg:grid-cols-4 lg:px-12">
-            {CLINIC_STATS.map((stat) => (
-              <div key={stat.label} className="pr-6">
+        {/* Cifras publicadas por el centro, animadas */}
+        <dl className="mx-auto mt-16 grid max-w-[1240px] grid-cols-2 gap-4 lg:grid-cols-4">
+          {CLINIC_STATS.map((stat, i) => (
+            <Reveal key={stat.label} delay={i * 80}>
+              <div className="h-full rounded-[1.5rem] bg-white p-6">
                 <dt className="sr-only">{stat.label}</dt>
                 <dd>
-                  <span className="block font-display text-4xl text-[#001531] sm:text-5xl">{stat.value}</span>
-                  <span className="mt-2 block max-w-[16rem] text-sm leading-snug text-neutral-600">{stat.label}</span>
+                  <CountUp value={stat.value} className="block font-display text-4xl text-ink sm:text-5xl" />
+                  <span className="mt-2 block text-base leading-snug text-body">{stat.label}</span>
                 </dd>
               </div>
-            ))}
-          </dl>
-        </div>
+            </Reveal>
+          ))}
+        </dl>
       </section>
 
-      {/* 4. Cómo funciona */}
-      <section className="border-b border-black/10">
-        <div className="mx-auto grid max-w-[1200px] grid-cols-1 gap-12 px-5 py-20 sm:px-8 lg:grid-cols-12 lg:px-12 lg:py-28">
-          <div className="lg:col-span-4">
-            <BrandStripe className="mb-6" />
-            <h2 className="font-display text-4xl leading-tight tracking-[-0.01em] text-[#001531] sm:text-5xl">
-              Tres pasos y estás dentro.
-            </h2>
-            <p className="mt-5 max-w-sm leading-relaxed text-neutral-600">
-              Todo el proceso es automático. No tienes que esperar a que alguien te habilite.
-            </p>
-          </div>
-
-          <ol className="divide-y divide-black/10 border-y border-black/10 lg:col-span-7 lg:col-start-6">
-            {steps.map((step, i) => (
-              <li key={step.title} className="grid grid-cols-[3.5rem_1fr] gap-4 py-8 sm:grid-cols-[5rem_1fr] sm:gap-6">
-                <span className="font-display text-4xl leading-none text-[#12a04a] sm:text-5xl">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <div>
-                  <h3 className="text-xl font-semibold text-[#001531]">{step.title}</h3>
-                  <p className="mt-2 max-w-lg leading-relaxed text-neutral-600">{step.text}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
-        </div>
-      </section>
-
-      {/* 5. Qué incluye */}
-      <section id="que-incluye" className="bg-[#001531] text-white">
-        <div id="membresia-exclusiva" className="mx-auto max-w-[1200px] px-5 py-20 sm:px-8 lg:px-12 lg:py-28">
-          <div className="grid grid-cols-1 gap-12 lg:grid-cols-12">
-            <div className="lg:col-span-5">
-              <BrandStripe className="mb-6" />
-              <h2 className="font-display text-4xl leading-tight tracking-[-0.01em] sm:text-5xl">
-                Material para los momentos difíciles <em className="italic text-white/70">y para el trabajo de fondo.</em>
-              </h2>
-            </div>
-
-            <ul className="divide-y divide-white/15 border-y border-white/15 lg:col-span-7">
-              {formats.map((f) => (
-                <li key={f.name} className="grid grid-cols-1 gap-2 py-7 sm:grid-cols-[13rem_1fr] sm:gap-8">
-                  <div className="flex items-center gap-3">
-                    <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: f.color }} />
-                    <h3 className="font-display text-2xl">{f.name}</h3>
-                  </div>
-                  <p className="leading-relaxed text-white/75">{f.text}</p>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </section>
-
-      {/* 6. Contenido reciente (desde Supabase) */}
+      {/* 8. Contenido reciente (desde Supabase) */}
       {contents.length > 0 && (
-        <section id="cursos-destacados" className="border-b border-black/10">
-          <div className="mx-auto max-w-[1200px] px-5 py-20 sm:px-8 lg:px-12 lg:py-28">
-            <div className="mb-12 flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
-              <div>
-                <BrandStripe className="mb-6" />
-                <h2 className="font-display text-4xl leading-tight tracking-[-0.01em] text-[#001531] sm:text-5xl">
-                  Lo último en el aula
-                </h2>
-              </div>
+        <section id="cursos-destacados" className="px-4 py-16 sm:px-6 lg:px-10 lg:py-24">
+          <div className="mx-auto max-w-[1240px]">
+            <Reveal className="flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
+              <SectionHeading eyebrow="Recién publicado" title="Lo último en el aula" />
               <Link
                 href="/catalogo"
-                className="text-[15px] font-semibold text-[#001531] underline decoration-black/25 underline-offset-[6px] hover:decoration-[#001531]"
+                className="inline-flex h-12 shrink-0 items-center gap-2 rounded-full border-2 border-ink/15 px-6 text-lg font-semibold text-ink hover:border-ink"
               >
-                Ver todo el catálogo →
+                Ver todo el catálogo
+                <Icon name="arrow-right" className="h-5 w-5" />
               </Link>
-            </div>
-
-            <div className="grid grid-cols-1 gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
-              {contents.map((item) => (
-                <ContentCard key={item.id} item={item} />
+            </Reveal>
+            <div className="mt-12 grid grid-cols-1 gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
+              {contents.map((item, i) => (
+                <Reveal key={item.id} delay={i * 90}>
+                  <ContentCard item={item} />
+                </Reveal>
               ))}
             </div>
           </div>
         </section>
       )}
 
-      {/* 7. Precio */}
-      <section id="precio-membresia" className="border-b border-black/10">
-        <div className="mx-auto max-w-[1200px] px-5 py-20 sm:px-8 lg:px-12 lg:py-28">
-          <div className="grid grid-cols-1 gap-12 rounded-[2rem] bg-white p-8 sm:p-12 lg:grid-cols-2 lg:p-16">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#133a73]">Membresía mensual</p>
-              <div className="mt-5 flex items-baseline gap-3">
-                <span className="font-display text-7xl leading-none text-[#001531] sm:text-8xl">$30</span>
-                <span className="text-lg text-neutral-500">USD al mes</span>
-              </div>
-              <p className="mt-6 max-w-sm leading-relaxed text-neutral-600">
-                Una sola tarifa. Todo el contenido actual y el que se publique mientras tu membresía esté activa.
-              </p>
+      {/* 9. Precio */}
+      <section id="precio-membresia" className="scroll-mt-24 px-4 py-16 sm:px-6 lg:px-10 lg:py-24">
+        <Reveal className="mx-auto max-w-[1040px]">
+          <div className="overflow-hidden rounded-[2.5rem] bg-white shadow-[0_30px_80px_rgba(11,31,58,0.12)]">
+            <div className="flex h-2" aria-hidden="true">
+              {LOGO_COLORS.map((c) => (
+                <span key={c} className="flex-1" style={{ backgroundColor: c }} />
+              ))}
             </div>
-
-            <div className="flex flex-col justify-between gap-10">
-              <ul className="divide-y divide-black/10 border-y border-black/10">
-                {priceIncludes.map((line) => (
-                  <li key={line} className="flex items-start gap-3 py-4 text-neutral-800">
-                    <span aria-hidden="true" className="mt-0.5 text-[#12a04a]">✓</span>
-                    <span>{line}</span>
-                  </li>
-                ))}
-              </ul>
-              <div className="space-y-4">
-                <CheckoutButton label={`Suscribirme por ${MEMBERSHIP_PRICE_LABEL} al mes`} />
-                <p className="text-sm text-neutral-500">Pago procesado de forma segura por ePayco.</p>
+            <div className="grid grid-cols-1 gap-10 p-8 sm:p-12 lg:grid-cols-2 lg:p-16">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-calm">Membresía mensual</p>
+                <h2 className="mt-4 font-display text-4xl leading-tight text-ink">Todo el contenido, una sola tarifa</h2>
+                <div className="mt-8 flex items-baseline gap-3">
+                  <span className="font-display text-8xl leading-none text-ink">$30</span>
+                  <span className="text-xl text-body">USD al mes</span>
+                </div>
+                <p className="mt-6 max-w-sm text-lg leading-relaxed text-body">
+                  Todo el material actual y el que se publique mientras tu membresía esté activa.
+                </p>
+              </div>
+              <div className="flex flex-col justify-between gap-10">
+                <ul className="space-y-4">
+                  {priceIncludes.map((line) => (
+                    <li key={line} className="flex items-start gap-3 text-lg text-ink">
+                      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-calm/15 text-calm">
+                        <Icon name="check" className="h-4 w-4" />
+                      </span>
+                      {line}
+                    </li>
+                  ))}
+                </ul>
+                <div>
+                  <Link
+                    href={EPAYCO_PLAN_URL}
+                    className="group flex h-16 w-full items-center justify-center gap-3 rounded-full bg-ink px-8 text-lg font-semibold text-white transition-colors hover:bg-brand"
+                  >
+                    Suscribirme por {MEMBERSHIP_PRICE_LABEL}/mes
+                    <Icon name="arrow-right" className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+                  </Link>
+                  <p className="mt-4 flex items-center justify-center gap-2 text-base text-body">
+                    <Icon name="lock" className="h-4 w-4" />
+                    Pago seguro procesado por ePayco
+                  </p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </Reveal>
       </section>
 
-
-      {/* 8. Acompañamiento 1 a 1 (servicios reales del centro) */}
-      <section className="border-b border-black/10 bg-[#001531] text-white">
-        <div className="mx-auto grid max-w-[1200px] grid-cols-1 gap-10 px-5 py-20 sm:px-8 lg:grid-cols-12 lg:px-12 lg:py-24">
-          <div className="lg:col-span-6">
-            <BrandStripe className="mb-6" />
-            <h2 className="font-display text-4xl leading-tight tracking-[-0.01em] sm:text-5xl">
+      {/* 10. Acompañamiento 1 a 1 (servicios reales del centro) */}
+      <section className="px-4 py-16 sm:px-6 lg:px-10 lg:py-20">
+        <Reveal className="mx-auto grid max-w-[1240px] grid-cols-1 items-center gap-8 rounded-[2.5rem] border-2 border-ink/10 p-8 sm:p-12 lg:grid-cols-12 lg:p-14">
+          <div className="lg:col-span-7">
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-calm">Terapia con un psicólogo</p>
+            <h2 className="mt-4 hyphens-none font-display text-[1.85rem] leading-tight text-ink sm:text-5xl">
               ¿Prefieres un acompañamiento personalizado?
             </h2>
-            <p className="mt-5 max-w-xl leading-relaxed text-white/75">
-              Además de la membresía, el centro ofrece psicoterapia online 1 a 1 con un psicólogo especializado en
-              ansiedad: evaluación inicial, plan de intervención personalizado y técnicas prácticas para la ansiedad
-              y el pánico. También hay sesiones grupales.
+            <p className="mt-5 max-w-xl text-lg leading-relaxed text-body">
+              El centro también ofrece psicoterapia online 1 a 1 con un psicólogo especializado en ansiedad: evaluación
+              inicial, plan personalizado y técnicas prácticas para la ansiedad y el pánico. También hay sesiones grupales.
             </p>
           </div>
-          <div className="flex flex-col justify-end gap-4 lg:col-span-5 lg:col-start-8">
+          <div className="flex flex-col gap-3 lg:col-span-5">
             <a
               href={CLINIC.freeSession}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex h-13 items-center justify-center rounded-full bg-white px-7 text-[15px] font-semibold text-[#001531] transition-colors hover:bg-[#f3efe6]"
+              className="inline-flex h-16 items-center justify-center gap-3 rounded-full bg-ink px-7 text-lg font-semibold text-white transition-colors hover:bg-brand"
             >
-              Agenda tu primera sesión gratis →
+              <Icon name="calendar" className="h-5 w-5" />
+              Agendar primera sesión gratis
             </a>
             <a
               href={CLINIC.whatsappTherapy}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex h-13 items-center justify-center rounded-full border border-white/30 px-7 text-[15px] font-semibold text-white transition-colors hover:border-white"
+              className="inline-flex h-16 items-center justify-center gap-3 rounded-full bg-[#1f9d55] px-7 text-lg font-semibold text-white transition-colors hover:bg-[#178a48]"
             >
-              Escribir por WhatsApp · {CLINIC.phoneDisplay}
+              <Icon name="whatsapp" className="h-5 w-5" />
+              WhatsApp {CLINIC.phoneDisplay}
             </a>
           </div>
-        </div>
+        </Reveal>
       </section>
 
-      {/* 9. Preguntas frecuentes */}
+      {/* 11. Preguntas frecuentes */}
       <FAQSection />
     </>
   );

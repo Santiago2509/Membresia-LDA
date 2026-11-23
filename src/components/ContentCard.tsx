@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { getVideoThumbnail } from '@/lib/videoUtils';
+import { Icon, type IconName } from './ui/Icon';
 
 export interface ContentCardItem {
   id: string;
@@ -20,12 +21,12 @@ interface ContentCardProps {
   priority?: boolean;
 }
 
-const TYPE_META: Record<string, { label: string; icon: string; color: string }> = {
-  video: { label: 'Video', icon: 'play_arrow', color: '#2b93d1' },
-  audio: { label: 'Audio guiado', icon: 'headphones', color: '#12a04a' },
-  pdf: { label: 'Guía PDF', icon: 'description', color: '#eeab52' },
-  tool: { label: 'Herramienta', icon: 'handyman', color: '#ec6f31' },
-  article: { label: 'Artículo', icon: 'menu_book', color: '#d6006f' },
+const TYPE_META: Record<string, { label: string; icon: IconName; color: string; action: string }> = {
+  video: { label: 'Video', icon: 'play', color: '#2b93d1', action: 'Ver video' },
+  audio: { label: 'Audio guiado', icon: 'headphones', color: '#12a04a', action: 'Escuchar audio' },
+  pdf: { label: 'Guía PDF', icon: 'file', color: '#eeab52', action: 'Abrir guía' },
+  tool: { label: 'Herramienta', icon: 'spark', color: '#ec6f31', action: 'Abrir herramienta' },
+  article: { label: 'Artículo', icon: 'book', color: '#d6006f', action: 'Leer artículo' },
 };
 
 export default function ContentCard({ item }: ContentCardProps) {
@@ -34,8 +35,12 @@ export default function ContentCard({ item }: ContentCardProps) {
   const thumbnail = item.thumbnail_url || getVideoThumbnail(item.url);
 
   return (
-    <Link href={`/aula/contenido/${item.id}`} prefetch={false} className="group flex h-full flex-col">
-      <div className="relative aspect-[16/10] w-full overflow-hidden rounded-2xl bg-[#d9d9d6]">
+    <Link
+      href={`/aula/contenido/${item.id}`}
+      prefetch={false}
+      className="group flex h-full flex-col overflow-hidden rounded-[1.75rem] bg-white shadow-[0_10px_40px_rgba(11,31,58,0.06)] transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_24px_60px_rgba(11,31,58,0.12)]"
+    >
+      <div className="relative aspect-[16/10] w-full overflow-hidden bg-[#e9e6df]">
         {thumbnail ? (
           <img
             src={thumbnail}
@@ -44,29 +49,29 @@ export default function ContentCard({ item }: ContentCardProps) {
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center" style={{ backgroundColor: `${meta.color}1f` }}>
-            <span className="material-symbols-outlined text-5xl" style={{ color: meta.color }}>
-              {meta.icon}
+            <span style={{ color: meta.color }}>
+              <Icon name={meta.icon} className="h-14 w-14" />
             </span>
           </div>
         )}
 
         {typeKey === 'video' && thumbnail && (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/90 text-[#001531] shadow-md transition-transform duration-300 group-hover:scale-110">
-              <span className="material-symbols-outlined ml-0.5 text-[26px]">play_arrow</span>
+            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white/95 text-ink shadow-lg transition-transform duration-300 group-hover:scale-110">
+              <Icon name="play" className="ml-1 h-7 w-7" />
             </span>
           </div>
         )}
 
         {!item.is_premium && (
-          <span className="absolute left-3 top-3 rounded-full bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#12a04a]">
+          <span className="absolute left-4 top-4 rounded-full bg-white px-3.5 py-1.5 text-sm font-semibold text-calm shadow">
             Gratis
           </span>
         )}
       </div>
 
-      <div className="flex flex-1 flex-col pt-5">
-        <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-500">
+      <div className="flex flex-1 flex-col p-6">
+        <p className="flex items-center gap-2 text-sm font-semibold text-body">
           <span className="h-2 w-2 rounded-full" style={{ backgroundColor: meta.color }} />
           <span>{meta.label}</span>
           {item.category && (
@@ -76,19 +81,25 @@ export default function ContentCard({ item }: ContentCardProps) {
             </>
           )}
           {item.is_premium && (
-            <span className="material-symbols-outlined ml-auto text-[15px] text-neutral-400" title="Solo miembros">
-              lock
+            <span className="ml-auto flex items-center gap-1 text-body" title="Solo miembros">
+              <Icon name="lock" className="h-4 w-4" />
+              <span className="sr-only">Solo miembros</span>
             </span>
           )}
         </p>
 
-        <h3 className="mt-3 font-display text-[1.45rem] leading-snug text-[#001531] transition-colors group-hover:text-[#133a73]">
+        <h3 className="mt-3 font-display text-2xl leading-snug text-ink transition-colors group-hover:text-brand">
           {item.title}
         </h3>
 
         {item.description && (
-          <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-neutral-600">{item.description}</p>
+          <p className="mt-2 line-clamp-2 text-base leading-relaxed text-body">{item.description}</p>
         )}
+
+        <span className="mt-auto flex items-center gap-2 pt-5 text-base font-semibold text-ink">
+          {meta.action}
+          <Icon name="arrow-right" className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+        </span>
       </div>
     </Link>
   );
