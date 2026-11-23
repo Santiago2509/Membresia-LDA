@@ -15,6 +15,8 @@ type Stage = 'checking' | 'ready' | 'invalid' | 'done';
  */
 export default function RestablecerPage() {
   const [stage, setStage] = useState<Stage>('checking');
+  // Motivo técnico del fallo (se muestra en letra pequeña para poder diagnosticar)
+  const [detail, setDetail] = useState<string | null>(null);
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -39,6 +41,7 @@ export default function RestablecerPage() {
 
     (async () => {
       if (urlError) {
+        setDetail(`Supabase: ${urlError}`);
         setStage('invalid');
         return;
       }
@@ -47,8 +50,10 @@ export default function RestablecerPage() {
       if (tokenHash) {
         const { error: otpError } = await supabase.auth.verifyOtp({ type: 'recovery', token_hash: tokenHash });
         if (cancelled) return;
-        if (otpError) setStage('invalid');
-        else markReady();
+        if (otpError) {
+          setDetail(`token_hash: ${otpError.message}`);
+          setStage('invalid');
+        } else markReady();
         return;
       }
 
@@ -61,7 +66,13 @@ export default function RestablecerPage() {
       }
 
       timeout = setTimeout(() => {
-        if (!cancelled) setStage((s) => (s === 'checking' ? 'invalid' : s));
+        if (cancelled) return;
+        setDetail(
+          query.get('code')
+            ? 'code: enlace del correo antiguo de Supabase, abierto en un navegador distinto al que pidió el cambio'
+            : 'sin código en el enlace'
+        );
+        setStage((s) => (s === 'checking' ? 'invalid' : s));
       }, 4000);
     })();
 
@@ -127,6 +138,7 @@ export default function RestablecerPage() {
             >
               Volver a iniciar sesión
             </Link>
+            {detail && <p className="text-xs text-neutral-400">Detalle: {detail}</p>}
           </div>
         )}
 
