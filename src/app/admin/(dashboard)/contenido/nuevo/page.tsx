@@ -307,7 +307,7 @@ export default function NuevoContenidoPage() {
           <div className="space-y-2 p-4 sm:p-5 bg-neutral-50 rounded-2xl border border-black/10">
             <label className="text-xs font-bold text-neutral-800 uppercase tracking-wider flex items-center gap-1.5">
               <span className="w-5 h-5 rounded-full bg-green-100 text-[#12a04a] flex items-center justify-center text-[10px] font-bold">B</span>
-              <span>Video Intermedio (Enlace de YouTube, Vimeo o Google Drive - Opcional)</span>
+              <span>{type === 'pdf' ? 'Documento PDF (Enlace de Google Drive - Opcional)' : 'Video Intermedio (Enlace de YouTube, Vimeo o Google Drive - Opcional)'}</span>
             </label>
             <input 
               type="text" 
@@ -319,7 +319,7 @@ export default function NuevoContenidoPage() {
 
             {isDriveUrl(url) && (
               <p className="text-xs leading-relaxed text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
-                <strong>Video de Google Drive:</strong> en Drive abre el archivo → <strong>Compartir</strong> → Acceso general →
+                <strong>Archivo de Google Drive:</strong> en Drive abre el archivo → <strong>Compartir</strong> → Acceso general →
                 <strong> &quot;Cualquier persona con el enlace&quot;</strong> (Lector). Si no, los miembros verán &quot;Necesitas permiso&quot;.
               </p>
             )}
@@ -334,9 +334,9 @@ export default function NuevoContenidoPage() {
               <div className="mt-4 pt-4 border-t border-black/5">
                 <p className="text-xs font-bold text-neutral-700 mb-2.5 flex items-center gap-1.5">
                   <span className="material-symbols-outlined text-[18px] text-green-600">visibility</span>
-                  <span>Vista Previa del Reproductor de Video:</span>
+                  <span>{type === 'pdf' ? 'Vista previa del documento:' : 'Vista Previa del Reproductor de Video:'}</span>
                 </p>
-                <div className="w-full aspect-video max-w-2xl mx-auto rounded-2xl overflow-hidden shadow-xl border border-black/10 bg-black">
+                <div className={`w-full max-w-2xl mx-auto rounded-2xl overflow-hidden shadow-xl border border-black/10 ${type === 'pdf' ? 'h-[480px] bg-neutral-100' : 'aspect-video bg-black'}`}>
                   <iframe 
                     src={embedPreviewUrl} 
                     className="w-full h-full border-0" 

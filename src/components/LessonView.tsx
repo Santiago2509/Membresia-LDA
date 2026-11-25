@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { getEmbedUrl } from '@/lib/videoUtils';
+import { getEmbedUrl, isDriveUrl } from '@/lib/videoUtils';
 import { createSupabaseBrowserClient } from '@/lib/supabase';
 import { EPAYCO_PLAN_URL, MEMBERSHIP_PRICE_LABEL } from '@/lib/membership';
 import { Icon } from './ui/Icon';
@@ -196,6 +196,8 @@ export default function LessonView({
   }, [contentId, initialHasAccess, checkSessionAccess, hasAccess]);
 
   const embedUrl = content?.url ? getEmbedUrl(content.url) : null;
+  // Un PDF de Drive se muestra en un visor alto (no en formato de video)
+  const isDocument = content?.type === 'pdf' && isDriveUrl(content?.url);
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 pb-20">
@@ -240,7 +242,31 @@ export default function LessonView({
             )}
           </header>
 
-          {embedUrl ? (
+          {embedUrl && isDocument ? (
+            /* Documento (PDF de Drive): visor alto para poder leerlo sin salir de la página */
+            <div className="mt-8 px-0 sm:px-12">
+              <div className="relative h-[75vh] min-h-[520px] w-full overflow-hidden border-y border-ink/10 bg-[#f1f1f1] sm:rounded-2xl sm:border">
+                <iframe
+                  src={embedUrl}
+                  className="h-full w-full border-0"
+                  allow="autoplay"
+                  allowFullScreen
+                  title={content?.title || 'Documento de la lección'}
+                />
+              </div>
+              <p className="mt-3 px-6 text-center text-base text-body sm:px-0">
+                ¿Se ve pequeño?{' '}
+                <a
+                  href={embedUrl.replace(/\/preview$/, '/view')}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold text-brand underline underline-offset-4"
+                >
+                  Abrir el documento en pantalla completa
+                </a>
+              </p>
+            </div>
+          ) : embedUrl ? (
             <div className="mt-8 px-0 sm:px-12">
               <div className="relative aspect-video w-full overflow-hidden bg-black sm:rounded-2xl">
                 <iframe
