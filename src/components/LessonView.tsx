@@ -8,6 +8,7 @@ import { getEmbedUrl, isDriveUrl } from '@/lib/videoUtils';
 import { createSupabaseBrowserClient } from '@/lib/supabase';
 import { EPAYCO_PLAN_URL, MEMBERSHIP_PRICE_LABEL } from '@/lib/membership';
 import { Icon } from './ui/Icon';
+import PdfDocument from './PdfDocument';
 import type { Components } from 'react-markdown';
 
 // Estilos del texto de las lecciones (Markdown), legibles para todas las edades
@@ -49,6 +50,7 @@ export default function LessonView({
   const [content, setContent] = useState(initialContent);
   const [isCheckingClient, setIsCheckingClient] = useState(!initialHasAccess);
   const [isExpired, setIsExpired] = useState(false);
+  const [pdfFailed, setPdfFailed] = useState(false);
 
   const epaycoPlanUrl = EPAYCO_PLAN_URL;
 
@@ -243,26 +245,30 @@ export default function LessonView({
           </header>
 
           {embedUrl && isDocument ? (
-            /* Documento (PDF de Drive): visor alto para poder leerlo sin salir de la página */
+            /* Documento PDF de Drive: todas las páginas una debajo de otra, con el scroll normal */
             <div className="mt-8 px-0 sm:px-12">
-              <div className="relative h-[75vh] min-h-[520px] w-full overflow-hidden border-y border-ink/10 bg-[#f1f1f1] sm:rounded-2xl sm:border">
-                <iframe
-                  src={embedUrl}
-                  className="h-full w-full border-0"
-                  allow="autoplay"
-                  allowFullScreen
-                  title={content?.title || 'Documento de la lección'}
-                />
-              </div>
-              <p className="mt-3 px-6 text-center text-base text-body sm:px-0">
-                ¿Se ve pequeño?{' '}
+              {pdfFailed ? (
+                /* Respaldo: visor de Drive si el PDF no se pudo dibujar */
+                <div className="relative h-[85vh] min-h-[560px] w-full overflow-hidden border-y border-ink/10 bg-[#f1f1f1] sm:rounded-2xl sm:border">
+                  <iframe
+                    src={embedUrl}
+                    className="h-full w-full border-0"
+                    allow="autoplay"
+                    allowFullScreen
+                    title={content?.title || 'Documento de la lección'}
+                  />
+                </div>
+              ) : (
+                <PdfDocument contentId={contentId} title={content?.title} onError={() => setPdfFailed(true)} />
+              )}
+              <p className="mt-4 px-6 text-center text-base text-body sm:px-0">
                 <a
                   href={embedUrl.replace(/\/preview$/, '/view')}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="font-semibold text-brand underline underline-offset-4"
                 >
-                  Abrir el documento en pantalla completa
+                  Abrir el documento en una pestaña nueva
                 </a>
               </p>
             </div>
