@@ -46,6 +46,49 @@ export function isMembershipActive(membership?: MembershipLike | null): boolean 
 }
 
 /**
+ * Estado de una membresía tal como lo ve el administrador:
+ * - al_dia: pagada y vigente (tiene acceso)
+ * - vencida: activa pero su periodo pagado terminó; sin acceso hasta el próximo pago
+ * - pago_fallido: ePayco rechazó el cobro de la renovación; sin acceso
+ * - suspendida: suspendida por un administrador o cancelada; sin acceso
+ * - incompleta: el pago nunca se completó
+ */
+export type MembershipState = 'al_dia' | 'vencida' | 'pago_fallido' | 'suspendida' | 'incompleta';
+
+export function getMembershipState(membership?: MembershipLike | null): MembershipState {
+  switch (membership?.status) {
+    case 'active':
+      return isMembershipActive(membership) ? 'al_dia' : 'vencida';
+    case 'past_due':
+      return 'pago_fallido';
+    case 'canceled':
+      return 'suspendida';
+    default:
+      return 'incompleta';
+  }
+}
+
+export const MEMBERSHIP_STATE_LABEL: Record<MembershipState, string> = {
+  al_dia: 'Al día',
+  vencida: 'Vencida',
+  pago_fallido: 'Pago fallido',
+  suspendida: 'Suspendida',
+  incompleta: 'Incompleta',
+};
+
+/** Totales para los contadores del panel de administración. */
+export function countMembershipStates(memberships: MembershipLike[]) {
+  const counts = { total: memberships.length, al_dia: 0, pendientes: 0, suspendidas: 0 };
+  for (const m of memberships) {
+    const state = getMembershipState(m);
+    if (state === 'al_dia') counts.al_dia++;
+    else if (state === 'suspendida') counts.suspendidas++;
+    else counts.pendientes++; // vencida, pago fallido o incompleta: sin acceso hasta que pague
+  }
+  return counts;
+}
+
+/**
  * Columnas que se leen para mostrar tarjetas de contenido. Nunca se pide
  * `body`, `body_after` ni `resource_url`. La `url` solo se usa en el servidor
  * para calcular la miniatura, y `toContentCard` la quita antes de enviarla al navegador.

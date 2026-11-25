@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { cookies } from 'next/headers';
+import { countMembershipStates, getMembershipState, MEMBERSHIP_STATE_LABEL } from '@/lib/membership';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -44,8 +45,10 @@ export default async function AdminDashboard() {
 
   const memberships = membershipsResult.data || [];
   const suscriptoresTotales = memberships.length;
-  const suscriptoresActivos = memberships.filter(m => m.status === 'active').length;
-  const pagosFallidos = memberships.filter(m => m.status === 'past_due').length;
+  const counts = countMembershipStates(memberships);
+  // Con acceso = al día (pagada y vigente); pendientes = vencidas o con cobro fallido
+  const suscriptoresActivos = counts.al_dia;
+  const pagosFallidos = counts.pendientes;
   const cursosActivos = contentCountResult.count ?? 0;
 
   // Suscriptores recientes (máximo los últimos 5)
@@ -108,7 +111,7 @@ export default async function AdminDashboard() {
           </div>
           <div className="relative z-10">
              <p className="font-headline-lg text-headline-lg text-secondary font-bold">{suscriptoresActivos}</p>
-             <p className="font-label-sm text-label-sm text-on-surface-variant font-medium mt-1">Membresías Activas</p>
+             <p className="font-label-sm text-label-sm text-on-surface-variant font-medium mt-1">Membresías al día</p>
           </div>
         </div>
 
@@ -139,7 +142,7 @@ export default async function AdminDashboard() {
           </div>
           <div className="relative z-10">
              <p className="font-headline-lg text-headline-lg text-on-surface font-bold">{pagosFallidos}</p>
-             <p className="font-label-sm text-label-sm text-on-surface-variant font-medium mt-1">Pagos Fallidos / Pendientes</p>
+             <p className="font-label-sm text-label-sm text-on-surface-variant font-medium mt-1">Pendientes de pago (vencidas o cobro fallido)</p>
           </div>
         </div>
       </div>
@@ -195,20 +198,22 @@ export default async function AdminDashboard() {
                         </div>
                       </td>
                       <td className="p-4">
-                        {sub.status === 'active' ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary/10 text-secondary font-label-xs font-bold border border-secondary/20">
-                            <span className="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
-                            Activo
-                          </span>
-                        ) : sub.status === 'past_due' ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-error/10 text-error font-label-xs font-bold">
-                            Pago Fallido
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface-variant font-label-xs font-bold">
-                            {sub.status === 'canceled' ? 'Cancelado' : sub.status}
-                          </span>
-                        )}
+                        {(() => {
+                          const state = getMembershipState(sub);
+                          const tone =
+                            state === 'al_dia'
+                              ? 'bg-secondary/10 text-secondary border-secondary/20'
+                              : state === 'vencida'
+                                ? 'bg-amber-100 text-amber-800 border-amber-300'
+                                : state === 'pago_fallido'
+                                  ? 'bg-error/10 text-error border-error/20'
+                                  : 'bg-surface-container-high text-on-surface-variant border-outline-variant/50';
+                          return (
+                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-label-xs font-bold border ${tone}`}>
+                              {MEMBERSHIP_STATE_LABEL[state]}
+                            </span>
+                          );
+                        })()}
                       </td>
                       <td className="p-4 font-body-sm text-on-surface-variant">
                         {sub.created_at ? format(new Date(sub.created_at), 'dd MMM yyyy, HH:mm', { locale: es }) : 'N/A'}

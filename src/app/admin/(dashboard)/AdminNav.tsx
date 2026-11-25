@@ -25,6 +25,12 @@ export function AdminNav({ adminEmail }: { adminEmail: string }) {
           icon: 'groups',
           exact: false,
         },
+        {
+          href: '/admin/pagos',
+          label: 'Pagos ePayco',
+          icon: 'receipt_long',
+          exact: false,
+        },
       ],
     },
     {

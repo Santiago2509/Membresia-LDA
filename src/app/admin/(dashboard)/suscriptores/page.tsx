@@ -2,6 +2,15 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { SuspendButton } from './SuspendButton';
+import { countMembershipStates, getMembershipState, MEMBERSHIP_STATE_LABEL, type MembershipState } from '@/lib/membership';
+
+const STATE_BADGE: Record<MembershipState, { box: string; dot: string }> = {
+  al_dia: { box: 'bg-secondary/10 text-secondary border-secondary/20', dot: 'bg-secondary animate-pulse' },
+  vencida: { box: 'bg-amber-100 text-amber-800 border-amber-300', dot: 'bg-amber-500' },
+  pago_fallido: { box: 'bg-error/10 text-error border-error/20', dot: 'bg-error' },
+  suspendida: { box: 'bg-surface-container-high text-on-surface-variant border-outline-variant/50', dot: 'bg-on-surface-variant' },
+  incompleta: { box: 'bg-surface-container-high text-on-surface-variant border-outline-variant/50', dot: 'bg-on-surface-variant' },
+};
 
 export const revalidate = 0;
 
@@ -13,9 +22,8 @@ export default async function AdminSuscriptoresPage() {
     .order('created_at', { ascending: false });
 
   // Estadísticas
-  const activos = memberships?.filter(m => m.status === 'active').length || 0;
-  const inactivos = memberships?.filter(m => m.status !== 'active').length || 0;
-  const total = memberships?.length || 0;
+  // Al día = pagada y vigente; Pendientes de pago = vencida o cobro fallido; Suspendidas = por un admin
+  const counts = countMembershipStates(memberships || []);
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-10">
@@ -28,21 +36,21 @@ export default async function AdminSuscriptoresPage() {
           </p>
         </div>
         {/* Stats bar */}
-        <div className="flex items-center gap-6">
-          <div className="flex flex-col items-end">
-            <span className="font-label-xs text-on-surface-variant uppercase tracking-wider">Total</span>
-            <span className="font-headline-sm text-primary font-bold">{total}</span>
-          </div>
-          <div className="h-10 w-px bg-outline-variant/50"></div>
-          <div className="flex flex-col items-end">
-            <span className="font-label-xs text-on-surface-variant uppercase tracking-wider">Activos</span>
-            <span className="font-headline-sm text-secondary font-bold">{activos}</span>
-          </div>
-          <div className="h-10 w-px bg-outline-variant/50"></div>
-          <div className="flex flex-col items-end">
-            <span className="font-label-xs text-on-surface-variant uppercase tracking-wider">Inactivos</span>
-            <span className="font-headline-sm text-error font-bold">{inactivos}</span>
-          </div>
+        <div className="flex flex-wrap items-center gap-5 sm:gap-6">
+          {[
+            { label: 'Total', value: counts.total, color: 'text-primary' },
+            { label: 'Al día', value: counts.al_dia, color: 'text-secondary' },
+            { label: 'Pendientes de pago', value: counts.pendientes, color: 'text-amber-700' },
+            { label: 'Suspendidas', value: counts.suspendidas, color: 'text-error' },
+          ].map((stat, index) => (
+            <div key={stat.label} className="flex items-center gap-5 sm:gap-6">
+              {index > 0 && <div className="h-10 w-px bg-outline-variant/50"></div>}
+              <div className="flex flex-col items-end">
+                <span className="font-label-xs text-on-surface-variant uppercase tracking-wider">{stat.label}</span>
+                <span className={`font-headline-sm font-bold ${stat.color}`}>{stat.value}</span>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -70,6 +78,7 @@ export default async function AdminSuscriptoresPage() {
                   const name = profile?.full_name || email.split('@')[0];
                   const initial = name.charAt(0).toUpperCase();
                   
+                  const state = getMembershipState(sub);
                   // Verificar si ya venció
                   const isExpired = sub.current_period_end 
                     ? new Date(sub.current_period_end) < new Date() 
@@ -92,32 +101,10 @@ export default async function AdminSuscriptoresPage() {
 
                       {/* Estado */}
                       <td className="p-4">
-                        {sub.status === 'active' && !isExpired ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary/10 text-secondary font-label-xs font-bold border border-secondary/20">
-                            <span className="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
-                            Activo
-                          </span>
-                        ) : sub.status === 'past_due' ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-error/10 text-error font-label-xs font-bold border border-error/20">
-                            <span className="w-2 h-2 rounded-full bg-error"></span>
-                            Pago Fallido
-                          </span>
-                        ) : sub.status === 'canceled' ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface-variant font-label-xs font-bold border border-outline-variant/50">
-                            <span className="w-2 h-2 rounded-full bg-on-surface-variant"></span>
-                            Cancelado
-                          </span>
-                        ) : isExpired ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-error/10 text-error font-label-xs font-bold border border-error/20">
-                            <span className="w-2 h-2 rounded-full bg-error"></span>
-                            Vencido
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface-variant font-label-xs font-bold border border-outline-variant/50">
-                            <span className="w-2 h-2 rounded-full bg-on-surface-variant"></span>
-                            {sub.status}
-                          </span>
-                        )}
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-label-xs font-bold border ${STATE_BADGE[state].box}`}>
+                          <span className={`w-2 h-2 rounded-full ${STATE_BADGE[state].dot}`}></span>
+                          {MEMBERSHIP_STATE_LABEL[state]}
+                        </span>
                       </td>
 
                       {/* Vencimiento */}
@@ -154,7 +141,7 @@ export default async function AdminSuscriptoresPage() {
           {/* Footer de la tabla */}
           <div className="px-4 py-3 bg-surface-container/30 border-t border-outline-variant/30 text-right">
             <p className="font-label-xs text-on-surface-variant">
-              Los estados se actualizan automáticamente vía Webhook de ePayco. Para detener cobros, gestiona la suscripción en el panel de ePayco.
+              Los estados se actualizan automáticamente con los avisos de ePayco (ver Pagos ePayco). Para detener cobros, gestiona la suscripción en el panel de ePayco.
             </p>
           </div>
         </div>
