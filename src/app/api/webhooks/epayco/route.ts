@@ -317,23 +317,9 @@ export async function POST(req: NextRequest) {
         if (profile) {
           const { data: membership } = await supabaseAdmin
             .from('memberships')
-            .select('status, current_period_end, epayco_subscription_id')
+            .select('status, current_period_end')
             .eq('user_id', profile.id)
             .maybeSingle();
-
-          // Reversión (código 6) del mismo pago que dio el periodo actual: ese periodo
-          // ya no está pagado, así que se quita el acceso de inmediato.
-          const isReversal = effectiveCod === '6' || responseText.includes('reversad');
-          if (membership && isReversal && membership.epayco_subscription_id === x_ref_payco) {
-            const nowIso = new Date().toISOString();
-            await supabaseAdmin
-              .from('memberships')
-              .update({ status: 'past_due', current_period_end: nowIso, updated_at: nowIso })
-              .eq('user_id', profile.id);
-            console.log(`[ePayco] Pago reversado (Ref: ${x_ref_payco}): se retira el acceso de ${customerEmail}.`);
-            await markEvent(x_ref_payco, 'processed', 'Reversada: se retiró el periodo que había dado este pago');
-            return NextResponse.json({ message: 'OK' }, { status: 200 });
-          }
 
           const stillPaid =
             membership?.current_period_end && new Date(membership.current_period_end) > new Date();

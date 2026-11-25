@@ -23,7 +23,6 @@ function paymentResult(p: Payload) {
   if (code === '3' || /pendiente/i.test(text)) return { label: 'Pendiente', tone: 'bg-amber-100 text-amber-800 border-amber-300' };
   if (code === '2' || /rechazad/i.test(text)) return { label: 'Rechazado', tone: 'bg-error/10 text-error border-error/20' };
   if (code === '4' || /fallid/i.test(text)) return { label: 'Fallido', tone: 'bg-error/10 text-error border-error/20' };
-  if (code === '6' || /reversad/i.test(text)) return { label: 'Reversado', tone: 'bg-error/10 text-error border-error/20' };
   return { label: text || 'Sin dato', tone: 'bg-surface-container-high text-on-surface-variant border-outline-variant/50' };
 }
 
