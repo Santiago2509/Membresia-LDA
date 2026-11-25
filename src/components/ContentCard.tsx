@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { getVideoThumbnail } from '@/lib/videoUtils';
 import { Icon, type IconName } from './ui/Icon';
@@ -32,7 +33,9 @@ const TYPE_META: Record<string, { label: string; icon: IconName; color: string; 
 export default function ContentCard({ item }: ContentCardProps) {
   const typeKey = (item.type || 'video').toLowerCase();
   const meta = TYPE_META[typeKey] || TYPE_META.article;
-  const thumbnail = item.thumbnail_url || getVideoThumbnail(item.url);
+  const [thumbnailFailed, setThumbnailFailed] = useState(false);
+  // Si la miniatura no carga (p. ej. un archivo de Drive sin compartir), se muestra el ícono del tipo
+  const thumbnail = thumbnailFailed ? null : item.thumbnail_url || getVideoThumbnail(item.url);
 
   return (
     <Link
@@ -45,6 +48,7 @@ export default function ContentCard({ item }: ContentCardProps) {
           <img
             src={thumbnail}
             alt=""
+            onError={() => setThumbnailFailed(true)}
             className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
           />
         ) : (

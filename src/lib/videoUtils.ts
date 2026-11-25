@@ -1,5 +1,5 @@
 /**
- * Utilidades para manejo y extracción de videos (YouTube, Vimeo, etc.)
+ * Utilidades para manejo y extracción de videos (YouTube, Vimeo, Google Drive)
  */
 
 export function extractYoutubeId(url?: string | null): string | null {
@@ -43,9 +43,42 @@ export function extractVimeoId(url?: string | null): string | null {
   return match ? match[1] : null;
 }
 
+/**
+ * ID de un archivo de Google Drive a partir de su enlace:
+ * - drive.google.com/file/d/ID/view?usp=sharing (enlace de "Compartir")
+ * - drive.google.com/file/d/ID/preview
+ * - drive.google.com/open?id=ID
+ * - drive.google.com/uc?id=ID&export=download
+ * - docs.google.com/file/d/ID/...
+ */
+export function extractDriveId(url?: string | null): string | null {
+  if (!url) return null;
+  const clean = url.trim();
+  const iframeMatch = clean.match(/src=["']([^"']+)["']/i);
+  const target = iframeMatch ? iframeMatch[1] : clean;
+
+  if (!/^(?:https?:\/\/)?(?:drive|docs)\.google\.com\//i.test(target)) return null;
+
+  const byPath = target.match(/\/file\/d\/([\w-]{20,})/i);
+  if (byPath) return byPath[1];
+
+  const byQuery = target.match(/[?&]id=([\w-]{20,})/i);
+  return byQuery ? byQuery[1] : null;
+}
+
+export function isDriveUrl(url?: string | null): boolean {
+  return extractDriveId(url) !== null;
+}
+
 export function getEmbedUrl(url?: string | null): string | null {
   if (!url) return null;
   const clean = url.trim();
+
+  // Google Drive (el archivo debe estar compartido como "Cualquier persona con el enlace")
+  const driveId = extractDriveId(clean);
+  if (driveId) {
+    return `https://drive.google.com/file/d/${driveId}/preview`;
+  }
 
   // YouTube
   const ytId = extractYoutubeId(clean);
@@ -72,6 +105,11 @@ export function getVideoThumbnail(url?: string | null): string | null {
   const ytId = extractYoutubeId(url);
   if (ytId) {
     return `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
+  }
+  // Miniatura de Drive: solo carga si el archivo es público con el enlace
+  const driveId = extractDriveId(url);
+  if (driveId) {
+    return `https://drive.google.com/thumbnail?id=${driveId}&sz=w1280`;
   }
   return null;
 }

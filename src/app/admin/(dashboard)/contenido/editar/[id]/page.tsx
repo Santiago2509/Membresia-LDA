@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { getEmbedUrl, getVideoThumbnail } from '@/lib/videoUtils';
+import { getEmbedUrl, getVideoThumbnail, isDriveUrl } from '@/lib/videoUtils';
 
 export default function EditarContenidoPage() {
   const router = useRouter();
@@ -208,7 +208,7 @@ export default function EditarContenidoPage() {
                 onChange={(e) => setType(e.target.value)}
                 className="w-full px-4 py-3 bg-neutral-50 rounded-xl border border-black/10 focus:outline-none focus:ring-2 focus:ring-[#133a73]/40 text-sm transition-all"
               >
-                <option value="video">Video (YouTube / Vimeo)</option>
+                <option value="video">Video (YouTube / Vimeo / Google Drive)</option>
                 <option value="article">Artículo / Lección de Lectura</option>
                 <option value="audio">Audio / Meditación</option>
                 <option value="pdf">Documento PDF / Guía Clínica</option>
@@ -342,15 +342,27 @@ export default function EditarContenidoPage() {
           <div className="space-y-2 p-4 sm:p-5 bg-neutral-50 rounded-2xl border border-black/10">
             <label className="text-xs font-bold text-neutral-800 uppercase tracking-wider flex items-center gap-1.5">
               <span className="w-5 h-5 rounded-full bg-green-100 text-[#12a04a] flex items-center justify-center text-[10px] font-bold">B</span>
-              <span>Video Intermedio (Enlace de YouTube o Vimeo - Opcional)</span>
+              <span>Video Intermedio (Enlace de YouTube, Vimeo o Google Drive - Opcional)</span>
             </label>
             <input 
               type="text" 
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              placeholder="Enlace de YouTube o Vimeo..."
+              placeholder="Pega el enlace de YouTube, Vimeo o Google Drive (botón Compartir → Copiar enlace)"
               className="w-full px-4 py-3 bg-white rounded-xl border border-black/10 focus:outline-none focus:ring-2 focus:ring-[#133a73]/40 text-sm transition-all"
             />
+
+            {isDriveUrl(url) && (
+              <p className="text-xs leading-relaxed text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                <strong>Video de Google Drive:</strong> en Drive abre el archivo → <strong>Compartir</strong> → Acceso general →
+                <strong> &quot;Cualquier persona con el enlace&quot;</strong> (Lector). Si no, los miembros verán &quot;Necesitas permiso&quot;.
+              </p>
+            )}
+            {url.trim() && !embedPreviewUrl && (
+              <p className="text-xs text-red-700">
+                No reconocemos este enlace. Usa un enlace de YouTube, Vimeo o Google Drive.
+              </p>
+            )}
 
             {embedPreviewUrl && (
               <div className="mt-4 pt-4 border-t border-black/5">
