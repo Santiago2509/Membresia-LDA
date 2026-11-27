@@ -25,7 +25,11 @@ export default function AdminPdfPreview({ driveUrl, embedUrl }: { driveUrl: stri
           return;
         }
         const body = await res.json().catch(() => null);
-        setReason(body?.error ? `${body.error} (código ${res.status})` : `Error ${res.status} del servidor.`);
+        setReason(
+          body?.error
+            ? `${body.error} (código ${res.status}${body.detail ? ` · ${body.detail}` : ''})`
+            : `Error ${res.status} del servidor.`
+        );
       })
       .catch(() => {
         if (!cancelled) setReason('No hubo respuesta del servidor.');
