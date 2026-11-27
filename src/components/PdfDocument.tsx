@@ -6,7 +6,9 @@ import { createSupabaseBrowserClient } from '@/lib/supabase';
 
 interface PdfDocumentProps {
   /** ID de la lección; el PDF se pide a /api/content/[id]/document (que valida el acceso). */
-  contentId: string;
+  contentId?: string;
+  /** Dirección alternativa del PDF (p. ej. la vista previa del panel de admin). */
+  src?: string;
   title?: string;
   /** Se llama si el PDF no se puede cargar, para mostrar el visor de Drive como respaldo. */
   onError?: () => void;
@@ -19,7 +21,8 @@ type PageSize = { width: number; height: number };
  * Así el miembro lee el documento con el scroll normal de la página, sin un
  * recuadro con su propio scroll. Cada página se dibuja cuando se acerca a la pantalla.
  */
-export default function PdfDocument({ contentId, title, onError }: PdfDocumentProps) {
+export default function PdfDocument({ contentId, src, title, onError }: PdfDocumentProps) {
+  const pdfUrl = src ?? `/api/content/${contentId}/document`;
   const containerRef = useRef<HTMLDivElement>(null);
   const [pdf, setPdf] = useState<PDFDocumentProxy | null>(null);
   const [pageSizes, setPageSizes] = useState<PageSize[]>([]);
@@ -57,7 +60,7 @@ export default function PdfDocument({ contentId, title, onError }: PdfDocumentPr
         const token = data.session?.access_token;
 
         const task = pdfjs.getDocument({
-          url: `/api/content/${contentId}/document`,
+          url: pdfUrl,
           httpHeaders: token ? { Authorization: `Bearer ${token}` } : undefined,
         });
         loadingTask = task;
@@ -86,7 +89,7 @@ export default function PdfDocument({ contentId, title, onError }: PdfDocumentPr
       cancelled = true;
       loadingTask?.destroy();
     };
-  }, [contentId]);
+  }, [pdfUrl]);
 
   if (failed) return null;
 

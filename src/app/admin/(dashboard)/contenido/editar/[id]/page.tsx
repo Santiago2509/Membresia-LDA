@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { getEmbedUrl, getVideoThumbnail, isDriveUrl } from '@/lib/videoUtils';
+import AdminPdfPreview from '@/components/AdminPdfPreview';
 
 export default function EditarContenidoPage() {
   const router = useRouter();
@@ -370,7 +371,10 @@ export default function EditarContenidoPage() {
                   <span className="material-symbols-outlined text-[18px] text-green-600">visibility</span>
                   <span>{type === 'pdf' ? 'Vista previa del documento:' : 'Vista Previa del Reproductor de Video:'}</span>
                 </p>
-                <div className={`w-full max-w-2xl mx-auto rounded-2xl overflow-hidden shadow-xl border border-black/10 ${type === 'pdf' ? 'h-[480px] bg-neutral-100' : 'aspect-video bg-black'}`}>
+                {type === 'pdf' && isDriveUrl(url) ? (
+                  <AdminPdfPreview key={url} driveUrl={url} embedUrl={embedPreviewUrl} />
+                ) : (
+                  <div className={`w-full max-w-2xl mx-auto rounded-2xl overflow-hidden shadow-xl border border-black/10 ${type === 'pdf' ? 'h-[480px] bg-neutral-100' : 'aspect-video bg-black'}`}>
                   <iframe 
                     src={embedPreviewUrl} 
                     className="w-full h-full border-0" 
@@ -378,7 +382,8 @@ export default function EditarContenidoPage() {
                     allowFullScreen
                     title="Vista previa del video"
                   />
-                </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
