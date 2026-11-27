@@ -13,6 +13,7 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { CONTENT_CARD_COLUMNS, EPAYCO_PLAN_URL, MEMBERSHIP_PRICE_LABEL } from '@/lib/membership';
 import { toContentCard } from '@/lib/contentCards';
+import { selectStandalone } from '@/lib/courses';
 import { CLINIC, CLINIC_STATS, CLINIC_TOPICS } from '@/lib/clinic';
 import { TestimonialCarousel } from '@/components/TestimonialCarousel';
 import { FEATURED_TESTIMONIALS, TESTIMONIALS } from '@/lib/testimonials';
@@ -86,13 +87,13 @@ export default async function Home() {
   );
 
   // Solo las columnas que necesita la tarjeta (nunca el contenido completo)
-  const { data: rows } = await supabase
-    .from('content')
-    .select(CONTENT_CARD_COLUMNS)
-    .order('created_at', { ascending: false })
-    .limit(3);
+  // Contenido suelto más reciente (las lecciones de un curso se ven dentro del curso)
+  const rows = await selectStandalone((onlyStandalone) => {
+    const query = supabase.from('content').select(CONTENT_CARD_COLUMNS);
+    return (onlyStandalone ? query.is('course_id', null) : query).order('created_at', { ascending: false }).limit(3);
+  });
 
-  const contents = (rows || []).map(toContentCard);
+  const contents = rows.map(toContentCard);
 
   return (
     <>

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { verifyAdmin } from '@/lib/authAdmin';
 import { getVideoThumbnail } from '@/lib/videoUtils';
+import { nextLessonPosition } from '@/lib/courses';
 
 export async function GET(
   req: NextRequest,
@@ -46,6 +47,7 @@ export async function PUT(
     body_after,
     resource_url,
     resource_title,
+    course_id,
   } = body;
 
   if (!title || !category || !type) {
@@ -57,14 +59,31 @@ export async function PUT(
 
   const finalThumbnail = thumbnail_url || getVideoThumbnail(url) || null;
 
+  // Curso de la lección. Si cambia de curso, va al final del nuevo; si sale del curso,
+  // queda suelta. Si la tabla de cursos aún no existe, no se toca nada de esto.
+  const { data: previous, error: previousError } = await supabaseAdmin
+    .from('content')
+    .select('course_id')
+    .eq('id', id)
+    .maybeSingle();
+  const previousCourse = previousError ? undefined : (previous as { course_id?: string | null } | null)?.course_id ?? null;
+  const newCourse: string | null = course_id || null;
+  let courseFields: Record<string, unknown> = {};
+  if (previousCourse !== undefined && newCourse !== previousCourse) {
+    courseFields = newCourse
+      ? { course_id: newCourse, position: await nextLessonPosition(newCourse) }
+      : { course_id: null, position: 0 };
+  }
+
   const { data, error } = await supabaseAdmin
     .from('content')
     .update({
+      ...courseFields,
       title,
       description,
       type,
       category,
-      is_premium: Boolean(is_premium),
+      is_premium: newCourse ? true : Boolean(is_premium),
       url: url || null,
       thumbnail_url: finalThumbnail,
       body: contentBody || null,

@@ -4,6 +4,7 @@ import CatalogoClient from '@/components/CatalogoClient';
 import { SectionHeading } from '@/components/ui/SectionHeading';
 import { CONTENT_CARD_COLUMNS } from '@/lib/membership';
 import { toContentCard } from '@/lib/contentCards';
+import { getCoursesWithCounts, selectStandalone } from '@/lib/courses';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -28,12 +29,16 @@ export default async function CatalogoPage({
 
   // Solo las columnas de la tarjeta: el contenido completo (url, texto, recursos)
   // nunca se envía al navegador desde el catálogo.
-  const { data: rows } = await supabase
-    .from('content')
-    .select(CONTENT_CARD_COLUMNS)
-    .order('created_at', { ascending: false });
+  // Las lecciones que pertenecen a un curso se ven dentro de su curso, no sueltas.
+  const [rows, courses] = await Promise.all([
+    selectStandalone((onlyStandalone) => {
+      const query = supabase.from('content').select(CONTENT_CARD_COLUMNS);
+      return (onlyStandalone ? query.is('course_id', null) : query).order('created_at', { ascending: false });
+    }),
+    getCoursesWithCounts(),
+  ]);
 
-  const contents = (rows || []).map(toContentCard);
+  const contents = rows.map(toContentCard);
 
   return (
     <div className="min-h-screen pt-28 pb-24 sm:pt-32">
@@ -46,7 +51,7 @@ export default async function CatalogoPage({
           />
         </div>
 
-        <CatalogoClient initialContents={contents} initialType={tipo} />
+        <CatalogoClient initialContents={contents} initialCourses={courses} initialType={tipo} />
       </div>
     </div>
   );

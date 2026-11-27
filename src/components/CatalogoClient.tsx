@@ -2,16 +2,18 @@
 
 import { useState, useMemo } from 'react';
 import ContentCard, { ContentCardItem } from '@/components/ContentCard';
+import CourseCard, { CourseCardItem } from '@/components/CourseCard';
 import { Icon, type IconName } from '@/components/ui/Icon';
 
 interface CatalogoClientProps {
   initialContents: ContentCardItem[];
+  initialCourses?: CourseCardItem[];
   initialType?: string;
 }
 
-const VALID_TYPES = ['all', 'video', 'audio', 'article', 'pdf'];
+const VALID_TYPES = ['all', 'course', 'video', 'audio', 'article', 'pdf'];
 
-export default function CatalogoClient({ initialContents, initialType }: CatalogoClientProps) {
+export default function CatalogoClient({ initialContents, initialCourses = [], initialType }: CatalogoClientProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState<string>(
     initialType && VALID_TYPES.includes(initialType) ? initialType : 'all'
@@ -21,17 +23,18 @@ export default function CatalogoClient({ initialContents, initialType }: Catalog
   // Extract unique categories from content
   const categories = useMemo(() => {
     const set = new Set<string>();
-    initialContents.forEach((c) => {
+    [...initialCourses, ...initialContents].forEach((c) => {
       if (c.category && c.category.trim() !== '') {
         set.add(c.category.trim());
       }
     });
     return Array.from(set);
-  }, [initialContents]);
+  }, [initialContents, initialCourses]);
 
   // Types list with friendly labels and icons
   const typeOptions: { key: string; label: string; icon: IconName }[] = [
     { key: 'all', label: 'Todo', icon: 'grid' },
+    ...(initialCourses.length > 0 ? [{ key: 'course', label: 'Cursos', icon: 'school' as IconName }] : []),
     { key: 'video', label: 'Videos', icon: 'play' },
     { key: 'audio', label: 'Audios', icon: 'headphones' },
     { key: 'pdf', label: 'Guías PDF', icon: 'file' },
@@ -41,6 +44,8 @@ export default function CatalogoClient({ initialContents, initialType }: Catalog
   // Filter content
   const filteredContents = useMemo(() => {
     return initialContents.filter((item) => {
+      if (selectedType === 'course') return false;
+
       // Type match
       if (selectedType !== 'all') {
         const itemType = (item.type || '').toLowerCase();
@@ -73,6 +78,22 @@ export default function CatalogoClient({ initialContents, initialType }: Catalog
       return true;
     });
   }, [initialContents, selectedType, selectedCategory, searchTerm]);
+
+  // Cursos: se muestran en "Todo" y en "Cursos", con los mismos filtros de tema y búsqueda
+  const filteredCourses = useMemo(() => {
+    if (selectedType !== 'all' && selectedType !== 'course') return [];
+    const normalize = (str: string) => str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const query = normalize(searchTerm.trim());
+    return initialCourses.filter((course) => {
+      if (selectedCategory !== 'all' && (course.category || '').toLowerCase() !== selectedCategory.toLowerCase()) {
+        return false;
+      }
+      if (!query) return true;
+      return [course.title, course.description, course.category].some((v) => normalize(v || '').includes(query));
+    });
+  }, [initialCourses, selectedType, selectedCategory, searchTerm]);
+
+  const totalResults = filteredCourses.length + filteredContents.length;
 
   const clearFilters = () => {
     setSearchTerm('');
@@ -159,7 +180,7 @@ export default function CatalogoClient({ initialContents, initialType }: Catalog
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-ink/10 pt-5 text-base text-body" aria-live="polite">
           <span>
-            {filteredContents.length} {filteredContents.length === 1 ? 'recurso encontrado' : 'recursos encontrados'}
+            {totalResults} {totalResults === 1 ? 'resultado encontrado' : 'resultados encontrados'}
           </span>
           {hasFilters && (
             <button
@@ -174,8 +195,11 @@ export default function CatalogoClient({ initialContents, initialType }: Catalog
         </div>
       </div>
 
-      {filteredContents.length > 0 ? (
+      {totalResults > 0 ? (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {filteredCourses.map((course) => (
+            <CourseCard key={`curso-${course.id}`} course={course} />
+          ))}
           {filteredContents.map((item) => (
             <ContentCard key={item.id} item={item} />
           ))}
@@ -186,10 +210,10 @@ export default function CatalogoClient({ initialContents, initialType }: Catalog
             <Icon name="search" className="h-8 w-8" />
           </span>
           <h3 className="font-display text-2xl text-ink">
-            {initialContents.length === 0 ? 'Muy pronto habrá contenido aquí' : 'No encontramos resultados'}
+            {initialContents.length + initialCourses.length === 0 ? 'Muy pronto habrá contenido aquí' : 'No encontramos resultados'}
           </h3>
           <p className="text-lg text-body">
-            {initialContents.length === 0
+            {initialContents.length + initialCourses.length === 0
               ? 'Estamos preparando las primeras lecciones. Vuelve pronto.'
               : 'Prueba con otra palabra o quita los filtros.'}
           </p>

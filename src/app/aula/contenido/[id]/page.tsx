@@ -4,6 +4,7 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import LessonView from '@/components/LessonView';
 import { isAdminEmail, isMembershipActive } from '@/lib/membership';
+import { getLessonNavigation } from '@/lib/courses';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -81,9 +82,13 @@ export default async function ContenidoPage({ params }: { params: Promise<{ id: 
     is_premium: content.is_premium,
   };
 
+  // Lección de un curso: curso, posición y lecciones vecinas (solo títulos)
+  const courseNav = content.course_id ? await getLessonNavigation(content.course_id, content.id) : null;
+
   return (
     <LessonView 
       key={content.id}
+      courseNav={courseNav}
       contentId={content.id}
       initialContent={initialContent}
       initialHasAccess={hasAccess}

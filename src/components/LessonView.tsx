@@ -9,6 +9,7 @@ import { createSupabaseBrowserClient } from '@/lib/supabase';
 import { EPAYCO_PLAN_URL, MEMBERSHIP_PRICE_LABEL } from '@/lib/membership';
 import { Icon } from './ui/Icon';
 import PdfDocument from './PdfDocument';
+import type { LessonNavigation } from '@/lib/courses';
 import type { Components } from 'react-markdown';
 
 // Estilos del texto de las lecciones (Markdown), legibles para todas las edades
@@ -37,6 +38,8 @@ interface LessonViewProps {
   initialContent: any;
   initialHasAccess: boolean;
   initialRequireLogin: boolean;
+  /** Si la lección pertenece a un curso: curso, posición y lecciones vecinas. */
+  courseNav?: LessonNavigation | null;
 }
 
 export default function LessonView({
@@ -44,6 +47,7 @@ export default function LessonView({
   initialContent,
   initialHasAccess,
   initialRequireLogin,
+  courseNav = null,
 }: LessonViewProps) {
   const [hasAccess, setHasAccess] = useState(initialHasAccess);
   const [requireLogin, setRequireLogin] = useState(initialRequireLogin);
@@ -206,11 +210,11 @@ export default function LessonView({
       {/* Volver */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
-          href="/catalogo"
+          href={courseNav ? `/cursos/${courseNav.course.id}` : '/catalogo'}
           className="inline-flex h-12 items-center gap-2 rounded-full border-2 border-ink/10 bg-white px-5 text-base font-semibold text-ink transition-colors hover:border-ink/40"
         >
           <Icon name="arrow-right" className="h-5 w-5 rotate-180" />
-          Volver al catálogo
+          {courseNav ? 'Volver al curso' : 'Volver al catálogo'}
         </Link>
 
         <div className="flex flex-wrap items-center gap-2 text-sm font-semibold">
@@ -227,6 +231,15 @@ export default function LessonView({
           )}
         </div>
       </div>
+
+      {courseNav && (
+        <p className="text-base text-body">
+          <Link href={`/cursos/${courseNav.course.id}`} className="font-semibold text-ink underline underline-offset-4">
+            {courseNav.course.title}
+          </Link>
+          {' · '}Lección {courseNav.index} de {courseNav.total}
+        </p>
+      )}
 
       {isCheckingClient ? (
         /* ESTADO 1: verificando acceso */
@@ -383,6 +396,38 @@ export default function LessonView({
             </Link>
           </div>
         </div>
+      )}
+
+      {/* Navegación dentro del curso */}
+      {courseNav && (courseNav.previous || courseNav.next) && (
+        <nav className="grid grid-cols-1 gap-3 sm:grid-cols-2" aria-label="Lecciones del curso">
+          {courseNav.previous ? (
+            <Link
+              href={`/aula/contenido/${courseNav.previous.id}`}
+              className="flex flex-col rounded-[1.5rem] border-2 border-ink/10 bg-white p-5 transition-colors hover:border-ink/40"
+            >
+              <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-body">
+                <Icon name="arrow-right" className="h-4 w-4 rotate-180" />
+                Lección anterior
+              </span>
+              <span className="mt-1 text-lg font-semibold text-ink">{courseNav.previous.title}</span>
+            </Link>
+          ) : (
+            <span className="hidden sm:block" />
+          )}
+          {courseNav.next && (
+            <Link
+              href={`/aula/contenido/${courseNav.next.id}`}
+              className="flex flex-col rounded-[1.5rem] bg-ink p-5 text-right text-white transition-colors hover:bg-brand"
+            >
+              <span className="inline-flex items-center justify-end gap-1.5 text-sm font-semibold text-white/80">
+                Siguiente lección
+                <Icon name="arrow-right" className="h-4 w-4" />
+              </span>
+              <span className="mt-1 text-lg font-semibold">{courseNav.next.title}</span>
+            </Link>
+          )}
+        </nav>
       )}
     </div>
   );

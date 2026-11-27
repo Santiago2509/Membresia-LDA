@@ -37,6 +37,12 @@ export function AdminNav({ adminEmail }: { adminEmail: string }) {
       group: 'Contenido',
       items: [
         {
+          href: '/admin/cursos',
+          label: 'Cursos',
+          icon: 'school',
+          exact: false,
+        },
+        {
           href: '/admin/contenido',
           label: 'Catálogo de Contenido',
           icon: 'library_books',

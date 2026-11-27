@@ -11,6 +11,8 @@ import { BreathingExercise } from '@/components/BreathingExercise';
 import { MembershipRenewal } from '@/components/MembershipRenewal';
 import { CONTENT_CARD_COLUMNS, EPAYCO_PLAN_URL, MEMBERSHIP_PRICE_LABEL, isAdminEmail, isMembershipActive } from '@/lib/membership';
 import { toContentCard } from '@/lib/contentCards';
+import { getCoursesWithCounts, selectStandalone } from '@/lib/courses';
+import CourseCard from '@/components/CourseCard';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -85,14 +87,18 @@ export default async function AulaDashboard() {
     supabaseAdmin.from('profiles').select('*').eq('id', user.id).maybeSingle(),
     supabaseAdmin.from('admins').select('id').eq('id', user.id).maybeSingle(),
     supabaseAdmin.from('memberships').select('*').eq('user_id', user.id).maybeSingle(),
-    supabaseAdmin.from('content').select(CONTENT_CARD_COLUMNS).order('created_at', { ascending: false }).limit(6),
+    selectStandalone((onlyStandalone) => {
+      const query = supabaseAdmin.from('content').select(CONTENT_CARD_COLUMNS);
+      return (onlyStandalone ? query.is('course_id', null) : query).order('created_at', { ascending: false }).limit(6);
+    }),
     supabaseAdmin.from('content').select('type'),
   ]);
 
   const profile = profileResult.data;
   const adminRecord = adminResult.data;
   const membership = membershipResult.data;
-  const contents = (contentsResult.data || []).map(toContentCard);
+  const contents = contentsResult.map(toContentCard);
+  const courses = await getCoursesWithCounts();
   const typeRows: { type: string | null }[] = typesResult.data || [];
 
   const isAdmin = 
@@ -196,6 +202,17 @@ export default async function AulaDashboard() {
       )}
 
       {/* Contenido reciente */}
+      {courses.length > 0 && (
+        <section>
+          <h2 className="mb-5 font-display text-3xl text-ink">Cursos</h2>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {courses.map((course) => (
+              <CourseCard key={course.id} course={course} />
+            ))}
+          </div>
+        </section>
+      )}
+
       <section>
         <div className="mb-8 flex items-end justify-between gap-4">
           <h2 className="font-display text-3xl text-ink">Agregado recientemente</h2>

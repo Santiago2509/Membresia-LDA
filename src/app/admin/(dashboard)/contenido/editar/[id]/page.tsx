@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { getEmbedUrl, getVideoThumbnail, isDriveUrl } from '@/lib/videoUtils';
 import AdminPdfPreview from '@/components/AdminPdfPreview';
+import CourseSelect from '@/components/admin/CourseSelect';
 
 export default function EditarContenidoPage() {
   const router = useRouter();
@@ -21,6 +22,7 @@ export default function EditarContenidoPage() {
   const [type, setType] = useState('video');
   const [category, setCategory] = useState('');
   const [isPremium, setIsPremium] = useState(true);
+  const [courseId, setCourseId] = useState('');
 
   // Estructura de la lección
   const [body, setBody] = useState('');
@@ -54,6 +56,7 @@ export default function EditarContenidoPage() {
         setCategory(item.category || '');
         setUrl(item.url || '');
         setIsPremium(item.is_premium ?? true);
+        setCourseId(item.course_id || '');
         setBody(item.body || '');
         setBodyAfter(item.body_after || '');
         setResourceUrl(item.resource_url || '');
@@ -106,7 +109,8 @@ export default function EditarContenidoPage() {
           description: description.trim() || null,
           type,
           category: category.trim(),
-          is_premium: isPremium,
+          is_premium: courseId ? true : isPremium,
+          course_id: courseId || null,
           url: url.trim() || null,
           thumbnail_url: finalThumbnailUrl,
           body: body.trim() || null,
@@ -121,7 +125,7 @@ export default function EditarContenidoPage() {
         throw new Error(errorData.error || 'Error al actualizar el contenido.');
       }
 
-      router.push('/admin/contenido');
+      router.push(courseId ? `/admin/cursos/${courseId}` : '/admin/contenido');
       router.refresh();
       
     } catch (err: any) {
@@ -217,6 +221,8 @@ export default function EditarContenidoPage() {
               </select>
             </div>
 
+            <CourseSelect value={courseId} onChange={setCourseId} />
+
             <div className="space-y-1.5 md:col-span-2">
               <label className="text-xs font-bold text-neutral-800 uppercase tracking-wider">Acceso a este Contenido</label>
               <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 p-4 bg-neutral-50 rounded-xl border border-black/10">
@@ -224,7 +230,8 @@ export default function EditarContenidoPage() {
                   <input 
                     type="radio" 
                     name="access"
-                    checked={isPremium} 
+                    checked={courseId ? true : isPremium} 
+                    disabled={Boolean(courseId)}
                     onChange={() => setIsPremium(true)}
                     className="w-4 h-4 text-[#133a73]"
                   />
@@ -237,7 +244,8 @@ export default function EditarContenidoPage() {
                   <input 
                     type="radio" 
                     name="access"
-                    checked={!isPremium} 
+                    checked={courseId ? false : !isPremium} 
+                    disabled={Boolean(courseId)}
                     onChange={() => setIsPremium(false)}
                     className="w-4 h-4 text-[#133a73]"
                   />
